@@ -1,1 +1,26 @@
+# ⛔ No subir claves ni archivos temporales
+.env
+
+# 🗑️ Archivos de audio generados
+*.wav
+*.mp3
+
+# 🧠 Archivos Python bytecode
 __pycache__/
+*.py[cod]
+*.pyo
+
+# 💻 Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# 📦 Entornos virtuales
+venv/
+.env/
+.venv/
+ENV/
+env/
+
+# 🧪 Archivos de prueba o logs
+*.log
+*.tmp
