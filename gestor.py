@@ -8,8 +8,10 @@ class Gestor:
         self.running = True
         self.volumen = 0
         self.imagen = None
+
         self.bus.subscribe("audio/volumen", self.recibir_volumen)
         self.bus.subscribe("imagen/nueva", self.recibir_imagen)
+        self.bus.subscribe("audio/transcripcion", self.recibir_transcripcion)
 
     def recibir_volumen(self, volumen):
         self.volumen = volumen
@@ -17,12 +19,13 @@ class Gestor:
     def recibir_imagen(self, imagen):
         self.imagen = imagen
 
+    def recibir_transcripcion(self, texto):
+        print("Ejecutando Modelo")
+        accion = self.agente.procesar(texto, self.imagen)
+        self.bus.publish("audio/voz", accion)
+
     def ciclo(self):
         while self.running:
-            if self.volumen > 15:
-                texto = "caminar"  # reemplazar con Whisper
-                accion = self.agente.procesar(texto, self.imagen)
-                self.bus.publish("accion", accion)
             time.sleep(0.2)
 
     def start(self):

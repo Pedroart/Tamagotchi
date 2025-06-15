@@ -8,12 +8,31 @@ from io import BytesIO
 import openai
 from dotenv import load_dotenv
 import os
+import asyncio
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+FILTERS = [
+    "subtítulos realizados por la comunidad de amara.org",
+    "subtitulado por la comunidad de amara.org",
+    "thank you for watching",
+    "thanks for watching",
+    "❤️ translated by amara.org community",
+    "¡Hasta luego! Nos vemos en el próximo video. ¡Chau!"
+    # puedes añadir más patrones aquí...
+]
+
+def clean_transcription(texto: str) -> str:
+    t = texto.strip()
+    lower = t.lower()
+    for pat in FILTERS:
+        if lower.endswith(pat):
+            return t[:len(t) - len(pat)].rstrip(" -–—,.:;")
+    return t
+
 class Microfono:
-    def __init__(self, bus, umbral=5, silencio_max=2.0):
+    def __init__(self, bus, umbral=5, silencio_max=5.0):
         self.running = True
         self.bus = bus
         self.umbral = umbral
@@ -37,7 +56,6 @@ class Microfono:
                 raise sd.CallbackStop()
 
             volumen = np.linalg.norm(indata) * 10
-            self.bus.publish("audio/volumen", volumen)
 
             ahora = time.time()
 
@@ -47,6 +65,7 @@ class Microfono:
             if volumen > self.umbral:
                 if not self.grabando:
                     print("🎤 Iniciando grabación...")
+                    self.bus.publish("audio/grabando", True)
                     self.grabando = True
                     self.buffer.clear()
                 self.ultimo_sonido = ahora
@@ -57,6 +76,7 @@ class Microfono:
                 # si pasó suficiente tiempo en silencio, detener grabación
                 if ahora - self.ultimo_sonido > self.silencio_max:
                     print("🛑 Deteniendo grabación...")
+                    self.bus.publish("audio/grabando", False)
                     self.grabando = False
                     #self.guardar_audio()
                     self.transcribir_audio_api_en_memoria()
@@ -83,8 +103,9 @@ class Microfono:
 
         # Convertir buffer de NumPy a WAV en memoria
         audio_np = np.concatenate(self.buffer, axis=0)
+        
         wav_buffer = BytesIO()
-
+        wav_buffer.name = "grabacion.wav"
         with wave.open(wav_buffer, 'wb') as wf:
             wf.setnchannels(1)
             wf.setsampwidth(2)
@@ -94,17 +115,25 @@ class Microfono:
         wav_buffer.seek(0)  # Rebobinar buffer para leerlo desde el principio
 
         # Enviar a la API de OpenAI
-        response = openai.Audio.transcribe(
+        response = openai.audio.transcriptions.create(
             model="whisper-1",
             file=wav_buffer,
-            filename="grabacion.wav",  # Necesario para que OpenAI lo trate como audio válido
             language="es"
         )
 
-        texto = response["text"]
-        print("📝 Transcripción:", texto)
-        self.bus.publish("audio/transcripcion", texto)
-        return texto
+        texto = response.text   
+        limpieza = clean_transcription(texto)
+        if limpieza != texto:
+            print(f"📝 Frase filtrada:\nAntes: «{texto}»\nDespués: «{limpieza}»")
+        print("📝 Transcripción final:", limpieza)
+        if len(limpieza) <= 1:
+            return
+
+        self.bus.publish("audio/transcripcion", limpieza)
+        
+        
+
+        return limpieza
 
     def start(self):
         threading.Thread(target=self.escuchar, daemon=True).start()

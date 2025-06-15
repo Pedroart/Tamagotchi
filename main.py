@@ -9,7 +9,7 @@ bus = EventBus()
 cam = Camara(bus)
 mic = Microfono(bus)
 ui = Interfaz(bus)
-agente = Agente()
+agente = Agente(bus)
 gestor = Gestor(bus, agente)
 
 cam.start()
