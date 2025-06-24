@@ -2,11 +2,22 @@ import os
 import sys
 import contextlib
 import time
-import keyboard
+import threading
+import paho.mqtt.client as mqtt
 from RealtimeSTT import AudioToTextRecorder
 
 modo = "manual"
+solicitar_escucha = False
 
+# MQTT Config
+MQTT_BROKER = "localhost"
+MQTT_PORT = 1883
+TOPIC_MODO = "voz/modo"
+TOPIC_ACCION = "voz/escuchar"
+TOPIC_ESTADO = "voz/estado"
+TOPIC_TEXTO = "voz/texto"
+
+# Oculta stderr molesto de NNPACK
 @contextlib.contextmanager
 def suppress_stderr():
     with open(os.devnull, 'w') as devnull:
@@ -17,15 +28,41 @@ def suppress_stderr():
         finally:
             sys.stderr = old_stderr
 
+# MQTT Callback
+def on_connect(client, userdata, flags, rc):
+    client.subscribe(TOPIC_MODO)
+    client.subscribe(TOPIC_ACCION)
+
+def on_message(client, userdata, msg):
+    global modo, solicitar_escucha
+
+    if msg.topic == TOPIC_MODO:
+        modo = msg.payload.decode().strip()
+        print(f"🔄 Modo cambiado a: {modo}")
+
+    elif msg.topic == TOPIC_ACCION and modo == "manual":
+        solicitar_escucha = True
+
+client = mqtt.Client()
+client.on_connect = on_connect
+client.on_message = on_message
+client.connect(MQTT_BROKER, MQTT_PORT, 60)
+
+# Arranca cliente MQTT en segundo plano
+threading.Thread(target=client.loop_forever, daemon=True).start()
+
+# Callbacks de STT
 def on_text(text):
-    print(f"\n🗣️  USUARIO: {text}")
+    print(f"\n🗣️  Texto detectado: {text}")
+    client.publish(TOPIC_TEXTO, text)
 
 def on_recording_start():
-    print("🎤 Escuchando...")
+    client.publish(TOPIC_ESTADO, "escuchando")
 
 def on_recording_stop():
-    print("⏹️  Grabación terminada")
+    client.publish(TOPIC_ESTADO, "procesando")
 
+# Cargar el STT
 with suppress_stderr():
     recorder = AudioToTextRecorder(
         model="tiny",
@@ -45,28 +82,13 @@ with suppress_stderr():
         on_recording_stop=on_recording_stop,
     )
 
-print("Presiona [a] para modo automático, [m] para modo manual.")
-print("En modo manual, presiona [espacio] para grabar.")
 
+# Bucle principal
 with recorder:
     while True:
-        if keyboard.is_pressed('a'):
-            if modo != "auto":
-                print("🔁 Cambiado a modo AUTOMÁTICO")
-                modo = "auto"
-                time.sleep(0.5)
-
-        elif keyboard.is_pressed('m'):
-            if modo != "manual":
-                print("🛑 Cambiado a modo MANUAL")
-                modo = "manual"
-                time.sleep(0.5)
-
         if modo == "auto":
             recorder.text(on_text)
-
         elif modo == "manual":
-            if keyboard.is_pressed('space'):
-                print("🎤 Iniciando grabación manual")
+            if solicitar_escucha:
+                solicitar_escucha = False
                 recorder.text(on_text)
-                time.sleep(0.5)  # Para evitar múltiples activaciones seguidas
