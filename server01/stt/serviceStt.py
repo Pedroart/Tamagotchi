@@ -54,6 +54,7 @@ threading.Thread(target=client.loop_forever, daemon=True).start()
 # Callbacks de STT
 def on_text(text):
     print(f"\n🗣️  Texto detectado: {text}")
+    solicitar_escucha = False
     client.publish(TOPIC_TEXTO, text)
 
 def on_recording_start():
@@ -90,5 +91,4 @@ with recorder:
             recorder.text(on_text)
         elif modo == "manual":
             if solicitar_escucha:
-                solicitar_escucha = False
                 recorder.text(on_text)
