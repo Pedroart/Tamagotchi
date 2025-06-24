@@ -7,7 +7,7 @@ import paho.mqtt.client as mqtt
 from RealtimeSTT import AudioToTextRecorder
 
 modo = "manual"
-solicitar_escucha = False
+solicitar_escucha = True
 
 # MQTT Config
 MQTT_BROKER = "localhost"
@@ -54,7 +54,6 @@ threading.Thread(target=client.loop_forever, daemon=True).start()
 # Callbacks de STT
 def on_text(text):
     print(f"\n🗣️  Texto detectado: {text}")
-    solicitar_escucha = False
     client.publish(TOPIC_TEXTO, text)
 
 def on_recording_start():
@@ -92,3 +91,4 @@ with recorder:
         elif modo == "manual":
             if solicitar_escucha:
                 recorder.text(on_text)
+                solicitar_escucha = False
