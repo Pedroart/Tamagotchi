@@ -33,3 +33,9 @@ python -m pip install --upgrade pip
 ```bash
 pip freeze > requirements.txt
 ```
+
+# Reiniciar Servicio de GIT
+```bash
+sudo git fetch origin
+sudo git reset --hard origin/main
+```
