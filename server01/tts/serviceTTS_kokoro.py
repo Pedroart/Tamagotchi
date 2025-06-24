@@ -4,6 +4,7 @@ import threading
 import sounddevice as sd
 import paho.mqtt.client as mqtt
 from kokoro_onnx import Kokoro
+import asyncio
 
 # Configuración MQTT
 MQTT_BROKER = "localhost"
@@ -32,7 +33,7 @@ def publish_estado(state):
     client.publish(TOPIC_ESTADO, state, retain=True)
 
 # 🎧 Hilo de reproducción
-def reproducir(text, emotion):
+async def reproducir(text, emotion):
     global is_playing, stop_signal
 
     is_playing = True
@@ -44,7 +45,7 @@ def reproducir(text, emotion):
             text, voice="af_sarah", speed=params["speed"], lang="es"
         )
 
-        for samples, sample_rate in stream:
+        async for samples, sample_rate in stream:
             if stop_signal:
                 break
             sd.play(samples, sample_rate)
