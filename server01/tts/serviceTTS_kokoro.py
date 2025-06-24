@@ -14,7 +14,7 @@ TOPIC_PARAR = "habla/stop"
 TOPIC_ESTADO = "habla/estado"
 
 # Cargar modelo Kokoro
-kokoro = Kokoro("kokoro-v1.0.int8.onnx", "voices-v1.0.bin")
+kokoro = Kokoro("tts/kokoro-v1.0.int8.onnx", "tts/voices-v1.0.bin")
 
 # Estado de voz
 reproduciendo = False

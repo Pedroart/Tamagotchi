@@ -14,7 +14,7 @@ TOPIC_ESTADO = "habla/estado"
 
 # Cargar modelo Piper
 print("🔊 Cargando modelo de voz...")
-voice = PiperVoice.load("es_ES-sharvard-medium.onnx")
+voice = PiperVoice.load("tts/es_ES-sharvard-medium.onnx")
 sample_rate = voice.config.sample_rate
 
 # Estado de voz

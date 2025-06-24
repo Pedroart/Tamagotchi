@@ -6,8 +6,8 @@ VENV_PATH = os.path.join(os.getcwd(), ".venv", "bin", "python")
 
 # Servicios a lanzar
 SERVICIOS = [
-    "server01/stt/service_stt.py",
-    "server01/tts/service_tts.py",
+    "stt/service_stt.py",
+    "tts/service_tts.py",
     # "ui_chat.py",  # descomenta si tienes UI
 ]
 
