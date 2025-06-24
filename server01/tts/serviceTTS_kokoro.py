@@ -1,105 +1,84 @@
+import os
 import asyncio
-import json
 import threading
+import numpy as np
 import sounddevice as sd
 import paho.mqtt.client as mqtt
 from kokoro_onnx import Kokoro
-import asyncio
 
-# Configuración MQTT
+# MQTT Config
 MQTT_BROKER = "localhost"
 MQTT_PORT = 1883
 TOPIC_TEXTO = "habla/texto"
 TOPIC_PARAR = "habla/stop"
 TOPIC_ESTADO = "habla/estado"
 
+# Cargar modelo Kokoro
 kokoro = Kokoro("kokoro-v1.0.int8.onnx", "voices-v1.0.bin")
-is_playing = False
-stop_signal = False
-current_thread = None
 
-# 🎭 Simulación de emociones por parámetros
-def get_voice_params(emotion):
-    if emotion == "feliz":
-        return {"speed": 1.2}
-    elif emotion == "triste":
-        return {"speed": 0.85}
-    elif emotion == "enojado":
-        return {"speed": 1.3}
-    else:
-        return {"speed": 1.0}
+# Estado de voz
+reproduciendo = False
+parar_evento = threading.Event()
 
-def publish_estado(state):
-    client.publish(TOPIC_ESTADO, state, retain=True)
+# MQTT client (global para publicar estado desde hilos)
+client = mqtt.Client()
 
-# 🎧 Hilo de reproducción
-async def reproducir(text, emotion):
-    global is_playing, stop_signal
+def publicar_estado(estado):
+    client.publish(TOPIC_ESTADO, estado)
 
-    is_playing = True
-    publish_estado("hablando")
+async def hablar_async(texto, voice_name="af_sarah", emotion="neutral"):
+    global reproduciendo
+
+    reproduciendo = True
+    publicar_estado("hablando")
+    parar_evento.clear()
 
     try:
-        params = get_voice_params(emotion)
-        stream = kokoro.create_stream(
-            text, voice="af_sarah", speed=params["speed"], lang="es"
-        )
-
+        stream = kokoro.create_stream(texto, voice=voice_name, speed=1.0, lang="es")
         async for samples, sample_rate in stream:
-            if stop_signal:
+            if parar_evento.is_set():
                 break
             sd.play(samples, sample_rate)
             sd.wait()
-
     except Exception as e:
-        print("[ERROR reproducción]", e)
+        print("❌ Error en reproducción:", e)
 
-    finally:
-        is_playing = False
-        stop_signal = False
-        publish_estado("detenido")
+    reproduciendo = False
+    publicar_estado("parado")
 
-# 📥 MQTT: Manejo de texto entrante
-def on_texto(client, userdata, msg):
-    global current_thread, stop_signal
+# Hilo puente que lanza asyncio desde entorno no-async
+def hilo_hablar(texto):
+    asyncio.run(hablar_async(texto))
 
-    try:
-        payload = json.loads(msg.payload.decode())
-        text = payload.get("text", "")
-        emotion = payload.get("emotion", "neutral")
+# MQTT Callbacks
+def on_connect(client, userdata, flags, rc):
+    print("📡 Conectado a MQTT")
+    client.subscribe(TOPIC_TEXTO)
+    client.subscribe(TOPIC_PARAR)
 
-        if not text:
-            return
+def on_message(client, userdata, msg):
+    global reproduciendo, parar_evento
 
-        # Si hay algo en curso, se interrumpe
-        if is_playing:
-            stop_signal = True
+    if msg.topic == TOPIC_TEXTO:
+        texto = msg.payload.decode()
+        print(f"🗣️ Texto recibido: {texto}")
+        if reproduciendo:
+            print("🔁 Deteniendo reproducción anterior...")
+            parar_evento.set()
             sd.stop()
-            if current_thread:
-                current_thread.join()
+        threading.Thread(target=hilo_hablar, args=(texto,), daemon=True).start()
 
-        # Inicia nuevo hilo de reproducción
-        current_thread = threading.Thread(target=reproducir, args=(text, emotion))
-        current_thread.start()
+    elif msg.topic == TOPIC_PARAR:
+        if reproduciendo:
+            print("⏹️ Parando voz...")
+            parar_evento.set()
+            sd.stop()
+            publicar_estado("parado")
 
-    except Exception as e:
-        print("[ERROR texto]", e)
+# Iniciar MQTT
+client.on_connect = on_connect
+client.on_message = on_message
+client.connect(MQTT_BROKER, MQTT_PORT, 60)
 
-# 📥 MQTT: Parar reproducción
-def on_parar(client, userdata, msg):
-    global stop_signal
-    if is_playing:
-        stop_signal = True
-        sd.stop()
-        publish_estado("detenido")
-
-# 🔌 Configuración MQTT
-client = mqtt.Client()
-client.connect(MQTT_BROKER, MQTT_PORT)
-client.message_callback_add(TOPIC_TEXTO, on_texto)
-client.message_callback_add(TOPIC_PARAR, on_parar)
-client.subscribe([(TOPIC_TEXTO, 0), (TOPIC_PARAR, 0)])
-
-print("[MQTT] Esperando comandos TTS...")
-publish_estado("listo")
+print("✅ Servicio TTS con Kokoro iniciado")
 client.loop_forever()
