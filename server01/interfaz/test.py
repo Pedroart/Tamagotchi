@@ -11,12 +11,6 @@ TOPIC_TEXTO = "voz/texto"
 TOPIC_RESPUESTA = "voz/estado"
 changed = True
 
-curses.start_color()
-curses.use_default_colors()
-curses.init_pair(1, curses.COLOR_WHITE, -1)   # IDLE
-curses.init_pair(2, curses.COLOR_GREEN, -1)   # LISTENING
-curses.init_pair(3, curses.COLOR_BLUE, -1)    # PROCESSING
-curses.init_pair(4, curses.COLOR_MAGENTA, -1) # SPEAKING
 
 COLOR_STATES = {
     "idle": 1,
@@ -24,7 +18,6 @@ COLOR_STATES = {
     "processing": 3,
     "speaking": 4,
 }
-
 
 # Estados posibles
 STATES = {
@@ -109,6 +102,15 @@ client.loop_start()
 
 def main(stdscr):
     global current_state, modo_actual,changed
+
+    curses.start_color()
+    curses.use_default_colors()
+    curses.init_pair(1, curses.COLOR_WHITE, -1)   # IDLE
+    curses.init_pair(2, curses.COLOR_GREEN, -1)   # LISTENING
+    curses.init_pair(3, curses.COLOR_BLUE, -1)    # PROCESSING
+    curses.init_pair(4, curses.COLOR_MAGENTA, -1) # SPEAKING
+
+
     curses.curs_set(0)
     stdscr.nodelay(True)
 

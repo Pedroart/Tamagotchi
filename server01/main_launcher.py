@@ -26,10 +26,6 @@ try:
 
     print("✅ Todos los servicios están corriendo. Ctrl+C para detener.")
 
-    # Esperar a que todos terminen (bloquea aquí)
-    for p in procesos:
-        p.wait()
-
 except KeyboardInterrupt:
     print("\n🛑 Interrupción detectada. Cerrando servicios...")
     for p in procesos:
