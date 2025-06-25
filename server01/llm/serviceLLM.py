@@ -28,9 +28,13 @@ def generar_respuesta(prompt, client):
         "model": MODEL,
         "stream": True,
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.9,
-        "top_p": 0.7,
-        "max_tokens": 8
+        "options": {
+            "num_thread": 1,
+            "temperature": 0.3,
+            "top_p": 0.3,
+            "num_ctx": 100,
+            "max_tokens": 8,
+        }
     }
     with requests.post(OLLAMA_URL, json=payload, stream=True) as resp:
         if resp.status_code != 200:
@@ -51,12 +55,12 @@ def generar_respuesta(prompt, client):
 
             buffer += content
             if any(sep in content for sep in (".", ";", ",", "?", "¡")):
-                info = client.publish(TOPIC_OUTPUT, buffer.strip())
+                info = client.publish(TOPIC_OUTPUT, buffer.strip(), qos=1, retain=True)
                 print("📤 Publicado: ", buffer.strip())
                 buffer = ""
 
         if buffer.strip():
-            result = client.publish(TOPIC_OUTPUT, buffer.strip())
+            result = client.publish(TOPIC_OUTPUT, buffer.strip(), qos=1, retain=True)
             result.wait_for_publish()
 
 def on_message(client, userdata, msg):
