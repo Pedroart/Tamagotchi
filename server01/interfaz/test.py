@@ -100,7 +100,6 @@ def main(stdscr):
     last_tab = None
 
     while True:
-        changed = False
         try:
             key = stdscr.getkey()
             if key == 'KEY_RIGHT':
@@ -132,7 +131,8 @@ def main(stdscr):
             stdscr.refresh()
             last_state = current_state
             last_tab = active_tab
-
+            changed = False
+            
         time.sleep(0.05)
 
 
