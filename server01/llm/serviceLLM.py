@@ -41,13 +41,15 @@ def generar_respuesta(prompt, client):
             buffer += content
             # detectamos delimitador
             if any(sep in content for sep in (".", ";", ",","?","¡")):
-                client.publish(TOPIC_OUTPUT, buffer.strip())
-                print(f'Procesado: {buffer.strip()}')
+                info = client.publish(TOPIC_OUTPUT, buffer.strip())
+                print("MQTT publish result:", info.rc)
                 buffer = ""
 
         # si queda algo sin enviar al final
         if buffer.strip():
-            client.publish(TOPIC_OUTPUT, buffer.strip())
+            result = client.publish(TOPIC_OUTPUT, buffer.strip())
+            result.wait_for_publish()
+
 
 def on_message(client, userdata, msg):
     prompt = msg.payload.decode("utf-8").strip()
@@ -59,4 +61,5 @@ client = mqtt.Client()
 client.on_message = on_message
 client.connect(MQTT_BROKER, MQTT_PORT, 60)
 client.subscribe(TOPIC_INPUT)
-client.loop_forever()
+client.loop_start()
+

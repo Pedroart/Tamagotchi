@@ -6,8 +6,8 @@ VENV="./.venv/bin/python"
 
 declare -A SCRIPTS=(
   ["STT"]="stt/serviceStt.py"
-  ["TTS"]="tts/serviceTTS_piper.py"
   ["LLM"]="llm/serviceLLM.py"
+  ["TTS"]="tts/serviceTTS_piper.py"
 )
 
 INTERFAZ_SCRIPT="interfaz/test.py"

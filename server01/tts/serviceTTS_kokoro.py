@@ -81,4 +81,5 @@ client.on_message = on_message
 client.connect(MQTT_BROKER, MQTT_PORT, 60)
 
 print("✅ Servicio TTS con Kokoro iniciado")
-client.loop_forever()
+client.loop_start()
+
