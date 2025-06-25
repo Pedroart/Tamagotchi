@@ -42,7 +42,7 @@ def generar_respuesta(prompt, client):
             # detectamos delimitador
             if any(sep in content for sep in (".", ";", ",","?","¡")):
                 client.publish(TOPIC_OUTPUT, buffer.strip())
-                #print(f'Procesado: {buffer.strip()}')
+                print(f'Procesado: {buffer.strip()}')
                 buffer = ""
 
         # si queda algo sin enviar al final

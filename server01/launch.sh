@@ -4,38 +4,33 @@ SESSION_SERVICIOS="asistente"
 SESSION_INTERFAZ="interfaz"
 VENV="./.venv/bin/python"
 
-declare -A SCRIPTS=(
-  ["STT"]="stt/serviceStt.py"
-  ["TTS"]="tts/serviceTTS_piper.py"
-  ["LLM"]="llm/serviceLLM.py"
+declare -a SCRIPTS=(
+  "stt/serviceStt.py"
+  "tts/serviceTTS_piper.py"
+  "llm/serviceLLM.py"
 )
 
 INTERFAZ_SCRIPT="interfaz/test.py"
 
-# 🧹 Eliminar sesiones si ya existen
-tmux has-session -t $SESSION_SERVICIOS 2>/dev/null && {
-  echo "🛑 Cerrando sesión anterior: $SESSION_SERVICIOS"
-  tmux kill-session -t $SESSION_SERVICIOS
-}
+# 🧹 Cierra sesiones previas si existen
+tmux has-session -t $SESSION_SERVICIOS 2>/dev/null && tmux kill-session -t $SESSION_SERVICIOS
+tmux has-session -t $SESSION_INTERFAZ 2>/dev/null && tmux kill-session -t $SESSION_INTERFAZ
 
-tmux has-session -t $SESSION_INTERFAZ 2>/dev/null && {
-  echo "🛑 Cerrando sesión anterior: $SESSION_INTERFAZ"
-  tmux kill-session -t $SESSION_INTERFAZ
-}
+# 🪟 Crea nueva sesión con una sola ventana
+echo "🧩 Creando sesión '$SESSION_SERVICIOS' con servicios en paneles..."
+tmux new-session -d -s $SESSION_SERVICIOS -n servicios "$VENV ${SCRIPTS[0]}"
 
-# 🚀 Crear nueva sesión para servicios en segundo plano
-echo "🧩 Creando sesión '$SESSION_SERVICIOS' con servicios..."
-tmux new-session -d -s $SESSION_SERVICIOS
-
-for nombre in "${!SCRIPTS[@]}"; do
-  SCRIPT=${SCRIPTS[$nombre]}
-  echo "  ➕ $nombre -> $SCRIPT"
-  tmux new-window -t $SESSION_SERVICIOS -n $nombre "$VENV $SCRIPT"
+# 👉 Divide en paneles verticales por cada servicio extra
+for i in "${!SCRIPTS[@]}"; do
+  if [ $i -gt 0 ]; then
+    tmux split-window -v -t $SESSION_SERVICIOS:servicios "$VENV ${SCRIPTS[$i]}"
+    tmux select-layout -t $SESSION_SERVICIOS:servicios tiled
+  fi
 done
 
-# 🚀 Crear sesión aparte para la interfaz
-echo "🖥️  Creando sesión '$SESSION_INTERFAZ' para la interfaz..."
+# 🖥️ Inicia sesión de interfaz por separado
+echo "🖥️ Creando sesión '$SESSION_INTERFAZ' para la interfaz..."
 tmux new-session -d -s $SESSION_INTERFAZ "$VENV $INTERFAZ_SCRIPT"
 
-# 👉 Mostrar solo la interfaz
-tmux attach-session -t $SESSION_INTERFAZ
+# 👉 Adjunta solo la interfaz
+tmux attach -t $SESSION_INTERFAZ
