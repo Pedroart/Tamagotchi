@@ -27,7 +27,7 @@ def chat_con_respuesta_corta(pregunta):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Uso: python chat_corto.py \"Tu pregunta aqui"")
+        print("Uso: python chat_corto.py \"Tu pregunta aqui")
     else:
         pregunta = " ".join(sys.argv[1:])
         chat_con_respuesta_corta(pregunta)
