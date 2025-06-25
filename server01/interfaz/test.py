@@ -5,7 +5,7 @@ import time
 # MQTT Config
 MQTT_BROKER = "localhost"
 MQTT_PORT = 1883
-TOPIC_MODO = "voz/estado"
+TOPIC_MODO = "voz/modo"
 TOPIC_ACCION = "voz/escuchar"
 TOPIC_TEXTO = "voz/texto"
 TOPIC_RESPUESTA = "habla/estado"
