@@ -9,6 +9,7 @@ TOPIC_MODO = "voz/modo"
 TOPIC_ACCION = "voz/escuchar"
 TOPIC_TEXTO = "voz/texto"
 TOPIC_RESPUESTA = "habla/estado"
+changed = True
 
 # Estados posibles
 STATES = {
@@ -69,7 +70,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe(TOPIC_RESPUESTA)
 
 def on_message(client, userdata, msg):
-    global chat_history, current_state
+    global chat_history, current_state,changed
     if msg.topic == TOPIC_TEXTO:
         chat_history.append(("USUARIO", msg.payload.decode()))
     elif msg.topic == TOPIC_RESPUESTA:
