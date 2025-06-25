@@ -42,6 +42,7 @@ pkill -f test.py
 
 sudo git fetch origin
 sudo git reset --hard origin/main
+mosquitto_sub -h localhost -t "#" -v
 ```
 
 

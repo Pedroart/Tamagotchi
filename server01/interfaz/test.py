@@ -11,6 +11,21 @@ TOPIC_TEXTO = "voz/texto"
 TOPIC_RESPUESTA = "voz/estado"
 changed = True
 
+curses.start_color()
+curses.use_default_colors()
+curses.init_pair(1, curses.COLOR_WHITE, -1)   # IDLE
+curses.init_pair(2, curses.COLOR_GREEN, -1)   # LISTENING
+curses.init_pair(3, curses.COLOR_BLUE, -1)    # PROCESSING
+curses.init_pair(4, curses.COLOR_MAGENTA, -1) # SPEAKING
+
+COLOR_STATES = {
+    "idle": 1,
+    "listening": 2,
+    "processing": 3,
+    "speaking": 4,
+}
+
+
 # Estados posibles
 STATES = {
     "idle": ("⚪", "IDLE"),
@@ -46,16 +61,18 @@ def draw_status_box(stdscr, state_key):
 
     for i in range(box_h):
         stdscr.addstr(y + i, x, " " * box_w, curses.A_DIM)
-    stdscr.addstr(y + 1, x + box_w // 2 - 1, icon, curses.A_BOLD)
-    stdscr.addstr(y + 3, x + box_w // 2 - len(label) // 2, label)
+    stdscr.addstr(y + 1, x + box_w // 2 - 1, "  ", curses.color_pair(COLOR_STATES[state_key]) | curses.A_REVERSE)
+    stdscr.addstr(y + 3, x + box_w // 2 - len(label) // 2, label, curses.color_pair(COLOR_STATES[state_key]) | curses.A_REVERSE)
 
 
 def draw_chat_history(stdscr, history):
     h, w = stdscr.getmaxyx()
-    y = h - len(history) * 2 - 2
-    for speaker, text in history[-5:]:
+    visible_history = history[-5:]  # Solo los últimos 5 mensajes
+    y = h - len(visible_history) * 2 - 2  # Altura basada solo en esos
+    for speaker, text in visible_history:
         stdscr.addstr(y, 2, f"{speaker}: {text}")
         y += 2
+
 
 
 def draw_config_screen(stdscr):
