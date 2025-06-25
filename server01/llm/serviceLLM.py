@@ -12,44 +12,47 @@ TOPIC_OUTPUT = "habla/texto"
 MODEL = "llama3.2:1b"
 OLLAMA_URL = "http://localhost:11434/api/chat"
 
-def generar_respuesta(prompt):
+def generar_respuesta(prompt, client):
     payload = {
         "model": MODEL,
-        "stream": False,
+        "stream": True,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.3,
-        "top_p" : 0.7,
+        "top_p": 0.7,
         "max_tokens": 10
     }
-    t0 = time.time()
-    resp = requests.post(OLLAMA_URL, json=payload)
-    dt = time.time() - t0
+    with requests.post(OLLAMA_URL, json=payload, stream=True) as resp:
+        if resp.status_code != 200:
+            print("❌ HTTP:", resp.status_code, resp.text)
+            return
 
-    if resp.status_code != 200:
-        print("❌ HTTP:", resp.status_code, resp.text)
-        return None
+        buffer = ""
+        for line in resp.iter_lines():
+            if not line:
+                continue
+            try:
+                data = json.loads(line.decode("utf-8"))
+            except json.JSONDecodeError:
+                continue
+            content = data.get("message", {}).get("content", "")
+            if not content:
+                continue
 
-    data = resp.json()
-    print("📥 JSON completo:", json.dumps(data, indent=2, ensure_ascii=False))
+            buffer += content
+            # detectamos delimitador
+            if any(sep in content for sep in (".", ";", ",","?","¡")):
+                client.publish(TOPIC_OUTPUT, buffer.strip())
+                buffer = ""
 
-    # Extraer contenido directamente de data["message"]
-    if "message" in data and "content" in data["message"]:
-        text = data["message"]["content"].strip()
-        print(f"⏱️ {dt:.2f}s para {len(text.split())} palabras")
-        return text
-    else:
-        print("⚠️ No se encontró 'message.content'")
-        return None
+        # si queda algo sin enviar al final
+        if buffer.strip():
+            client.publish(TOPIC_OUTPUT, buffer.strip())
 
 def on_message(client, userdata, msg):
     prompt = msg.payload.decode("utf-8").strip()
     print(f"[MQTT] Prompt recibido: {prompt}")
-    respuesta = generar_respuesta(prompt)
-    if respuesta:
-        print(f"[LLM] Respuesta: {respuesta}")
-        client.publish(TOPIC_OUTPUT, respuesta)
-    else:
-        print("[LLM] No se generó respuesta")
+    generar_respuesta(prompt, client)
+
 
 client = mqtt.Client()
 client.on_message = on_message
