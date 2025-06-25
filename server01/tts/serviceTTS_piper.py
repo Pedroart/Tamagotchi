@@ -49,12 +49,18 @@ def on_connect(client, userdata, flags, rc):
         print("📡 Conectado a MQTT correctamente")
         client.subscribe(TOPIC_TEXTO)
         client.subscribe(TOPIC_PARAR)
+
+        # 📢 Publicar estado "listo"
+        client.publish(TOPIC_ESTADO, "listo")
+        print("📶 Estado publicado: listo")
+
     else:
         print(f"❌ Fallo al conectar al broker. Código rc={rc}")
 
 
 def on_message(client, userdata, msg):
     global reproduciendo, parar_evento
+    print(f"📩 Mensaje MQTT recibido en tópico: {msg.topic} → {msg.payload.decode()}")
 
     if msg.topic == TOPIC_TEXTO:
         texto = msg.payload.decode()

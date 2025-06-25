@@ -6,8 +6,8 @@ VENV="./.venv/bin/python"
 
 declare -A SCRIPTS=(
   ["STT"]="stt/serviceStt.py"
-  ["LLM"]="llm/serviceLLM.py"
   ["TTS"]="tts/serviceTTS_piper.py"
+  ["LLM"]="llm/serviceLLM.py"
 )
 
 INTERFAZ_SCRIPT="interfaz/test.py"
@@ -31,6 +31,7 @@ for nombre in "${!SCRIPTS[@]}"; do
   SCRIPT=${SCRIPTS[$nombre]}
   echo "  ➕ $nombre -> $SCRIPT"
   tmux new-window -t $SESSION_SERVICIOS -n $nombre "$VENV $SCRIPT"
+  sleep 1
 done
 
 # 🚀 Crear sesión aparte para la interfaz
