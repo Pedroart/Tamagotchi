@@ -7,7 +7,7 @@ import paho.mqtt.client as mqtt
 from RealtimeSTT import AudioToTextRecorder
 
 modo = "manual"
-solicitar_escucha = True
+solicitar_escucha = False
 
 # MQTT Config
 MQTT_BROKER = "localhost"

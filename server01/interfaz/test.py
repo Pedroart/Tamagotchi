@@ -1,5 +1,14 @@
+import paho.mqtt.client as mqtt
 import curses
 import time
+
+# MQTT Config
+MQTT_BROKER = "localhost"
+MQTT_PORT = 1883
+TOPIC_MODO = "voz/estado"
+TOPIC_ACCION = "voz/escuchar"
+TOPIC_TEXTO = "voz/texto"
+TOPIC_RESPUESTA = "habla/estado"
 
 # Estados posibles
 STATES = {
@@ -17,7 +26,7 @@ chat_history = [
 
 # Estado inicial
 current_state = "idle"
-
+modo_actual = "manual"
 
 def draw_tabs(stdscr, active_tab):
     tabs = [" Chatbot ", " Configuración "]
@@ -52,8 +61,35 @@ def draw_config_screen(stdscr):
     stdscr.addstr(4, 4, "Pantalla de configuración (vacía por ahora)", curses.A_DIM)
 
 
+# MQTT client
+client = mqtt.Client()
+
+def on_connect(client, userdata, flags, rc):
+    client.subscribe(TOPIC_TEXTO)
+    client.subscribe(TOPIC_RESPUESTA)
+
+def on_message(client, userdata, msg):
+    global chat_history, current_state
+    if msg.topic == TOPIC_TEXTO:
+        chat_history.append(("USUARIO", msg.payload.decode()))
+    elif msg.topic == TOPIC_RESPUESTA:
+        chat_history.append(("LUCI", msg.payload.decode()))
+        if msg.payload.decode().lower() == "hablando":
+            current_state = "speaking"
+        elif msg.payload.decode().lower() == "procesando":
+            current_state = "processing"
+        elif msg.payload.decode().lower() == "escuchando":
+            current_state = "listening"
+        else:
+            current_state = "idle"
+
+client.on_connect = on_connect
+client.on_message = on_message
+client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.loop_start()
+
 def main(stdscr):
-    global current_state
+    global current_state, modo_actual
     curses.curs_set(0)
     stdscr.nodelay(True)
 
@@ -73,17 +109,12 @@ def main(stdscr):
                 changed = True
             elif key.lower() == 'q':
                 break
-            elif key.lower() == 'l':
-                current_state = "listening"
+            elif key.lower() == 'm':
+                modo_actual = "auto" if modo_actual == "manual" else "manual"
+                client.publish(TOPIC_MODO, modo_actual)
                 changed = True
-            elif key.lower() == 'p':
-                current_state = "processing"
-                changed = True
-            elif key.lower() == 's':
-                current_state = "speaking"
-                changed = True
-            elif key.lower() == 'i':
-                current_state = "idle"
+            elif key.lower() == 'h':
+                client.publish(TOPIC_ACCION, "1")
                 changed = True
         except:
             pass
