@@ -36,6 +36,12 @@ pip freeze > requirements.txt
 
 # Reiniciar Servicio de GIT
 ```bash
+pkill -f serviceStt.py
+pkill -f serviceTTS_piper.py
+pkill -f test.py
+
 sudo git fetch origin
 sudo git reset --hard origin/main
 ```
+
+
