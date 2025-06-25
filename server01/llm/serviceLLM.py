@@ -59,6 +59,15 @@ def generar_respuesta(prompt, client):
                 print("📤 Publicado: ", buffer.strip())
                 buffer = ""
 
+            if (buffer.count(" ") >= 2){
+                sec_pos = nth_index(buffer, " ", 2)
+                mensaje = buffer[:sec_pos].strip()
+                buffer = buffer[sec_pos+1:]  # quita lo enviado
+
+                info = client.publish(TOPIC_OUTPUT, mensaje, qos=1, retain=True)
+                print("📤 Publicado grupo:", mensaje)
+            }
+
         if buffer.strip():
             result = client.publish(TOPIC_OUTPUT, buffer.strip(), qos=1, retain=True)
             result.wait_for_publish()
