@@ -19,7 +19,7 @@ def generar_respuesta(prompt, client):
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.9,
         "top_p": 0.7,
-        "max_tokens": 10
+        "max_tokens": 8
     }
     with requests.post(OLLAMA_URL, json=payload, stream=True) as resp:
         if resp.status_code != 200:
