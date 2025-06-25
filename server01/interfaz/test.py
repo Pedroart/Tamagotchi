@@ -133,5 +133,5 @@ def main(stdscr):
 
         time.sleep(0.05)
 
-if __name__ == "__main__":
-    curses.wrapper(main)
+
+curses.wrapper(main)
