@@ -54,7 +54,7 @@ def generar_respuesta(prompt, client):
                 continue
 
             buffer += content
-            if any(sep in content for sep in (".", ";", ",", "?", "¡")):
+            if any(sep in content for sep in (".", ";", ",", "?", "!")):
                 info = client.publish(TOPIC_OUTPUT, buffer.strip(), qos=1, retain=True)
                 print("📤 Publicado: ", buffer.strip())
                 buffer = ""
