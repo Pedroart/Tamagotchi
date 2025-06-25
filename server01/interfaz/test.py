@@ -82,6 +82,7 @@ def on_message(client, userdata, msg):
             current_state = "listening"
         else:
             current_state = "idle"
+    changed = True
 
 client.on_connect = on_connect
 client.on_message = on_message
