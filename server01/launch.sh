@@ -35,7 +35,7 @@ done
 
 # 🚀 Crear sesión aparte para la interfaz
 echo "🖥️  Creando sesión '$SESSION_INTERFAZ' para la interfaz..."
-tmux new-session -d -s $SESSION_INtambiTERFAZ "$VENV $INTERFAZ_SCRIPT"
+tmux new-session -d -s $SESSION_INTERFAZ "$VENV $INTERFAZ_SCRIPT"
 
 # 👉 Mostrar solo la interfaz
 tmux attach-session -t $SESSION_INTERFAZ
