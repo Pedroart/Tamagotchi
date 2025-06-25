@@ -1,39 +1,41 @@
 #!/bin/bash
 
-SESSION_NAME="asistente"
+SESSION_SERVICIOS="asistente"
+SESSION_INTERFAZ="interfaz"
 VENV="./.venv/bin/python"
 
 declare -A SCRIPTS=(
   ["STT"]="stt/serviceStt.py"
   ["TTS"]="tts/serviceTTS_piper.py"
   ["LLM"]="llm/serviceLLM.py"
-  ["INTERFAZ"]="interfaz/test.py"
 )
 
-# 🧹 Limpia sesión previa si existe
-tmux has-session -t $SESSION_NAME 2>/dev/null
-if [ $? -eq 0 ]; then
-  echo "🔁 Cerrando sesión previa de tmux..."
-  tmux kill-session -t $SESSION_NAME
-fi
+INTERFAZ_SCRIPT="interfaz/test.py"
 
-echo "🚀 Creando sesión nueva: $SESSION_NAME"
-tmux new-session -d -s $SESSION_NAME
+# 🧹 Eliminar sesiones si ya existen
+tmux has-session -t $SESSION_SERVICIOS 2>/dev/null && {
+  echo "🛑 Cerrando sesión anterior: $SESSION_SERVICIOS"
+  tmux kill-session -t $SESSION_SERVICIOS
+}
 
-# 🪄 Lanza cada script en una ventana separada
+tmux has-session -t $SESSION_INTERFAZ 2>/dev/null && {
+  echo "🛑 Cerrando sesión anterior: $SESSION_INTERFAZ"
+  tmux kill-session -t $SESSION_INTERFAZ
+}
+
+# 🚀 Crear nueva sesión para servicios en segundo plano
+echo "🧩 Creando sesión '$SESSION_SERVICIOS' con servicios..."
+tmux new-session -d -s $SESSION_SERVICIOS
+
 for nombre in "${!SCRIPTS[@]}"; do
   SCRIPT=${SCRIPTS[$nombre]}
-  echo "  🧩 Añadiendo $nombre: $SCRIPT"
-  tmux new-window -t $SESSION_NAME -n $nombre "$VENV $SCRIPT"
+  echo "  ➕ $nombre -> $SCRIPT"
+  tmux new-window -t $SESSION_SERVICIOS -n $nombre "$VENV $SCRIPT"
 done
 
-# 🪟 Cierra todas las ventanas excepto INTERFAZ
-for nombre in "${!SCRIPTS[@]}"; do
-  if [ "$nombre" != "INTERFAZ" ]; then
-    tmux send-keys -t $SESSION_NAME:$nombre "clear" C-m
-  fi
-done
+# 🚀 Crear sesión aparte para la interfaz
+echo "🖥️  Creando sesión '$SESSION_INTERFAZ' para la interfaz..."
+tmux new-session -d -s $SESSION_INtambiTERFAZ "$VENV $INTERFAZ_SCRIPT"
 
-# 🖥️ Adjunta solo la vista de interfaz
-tmux select-window -t $SESSION_NAME:INTERFAZ
-tmux attach-session -t $SESSION_NAME
+# 👉 Mostrar solo la interfaz
+tmux attach-session -t $SESSION_INTERFAZ
