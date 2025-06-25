@@ -45,9 +45,13 @@ def hablar(texto):
 
 # MQTT Callbacks
 def on_connect(client, userdata, flags, rc):
-    client.subscribe(TOPIC_TEXTO)
-    client.subscribe(TOPIC_PARAR)
-    print("📡 Conectado a MQTT")
+    if rc == 0:
+        print("📡 Conectado a MQTT correctamente")
+        client.subscribe(TOPIC_TEXTO)
+        client.subscribe(TOPIC_PARAR)
+    else:
+        print(f"❌ Fallo al conectar al broker. Código rc={rc}")
+
 
 def on_message(client, userdata, msg):
     global reproduciendo, parar_evento
