@@ -83,7 +83,9 @@ with suppress_stderr():
     )
 
 
+
 with recorder:
+    print("Modelo cargado")
     try:
         while True:
             if modo == "auto":
