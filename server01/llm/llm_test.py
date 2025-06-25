@@ -1,10 +1,13 @@
 from llama_cpp import Llama
 
 # Inicializa el modelo
-llm = Llama(model_path="models/tinyllama.gguf", n_ctx=512)
+llm = Llama(model_path="models/tinyllama.gguf", n_ctx=256)
 
 # Consulta
-respuesta = llm("¿Qué es la inteligencia artificial?", max_tokens=100)
-
-# Mostrar respuesta
-print(respuesta['choices'][0]['text'].strip())
+res = llm.create_chat_completion(
+    messages=[
+        {"role": "user", "content": "¿Qué es la inteligencia artificial?"}
+    ],
+    max_tokens=100
+)
+print(res['choices'][0]['message']['content'].strip())
