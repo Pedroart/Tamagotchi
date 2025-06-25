@@ -41,6 +41,7 @@ def generar_respuesta(prompt, client):
             buffer += content
             # detectamos delimitador
             if any(sep in content for sep in (".", ";", ",","?","¡")):
+                print(f'Procesado: {buffer.strip()}')
                 client.publish(TOPIC_OUTPUT, buffer.strip())
                 buffer = ""
 
