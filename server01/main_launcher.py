@@ -18,7 +18,7 @@ try:
     for script in SERVICIOS:
         print(f"🚀 Lanzando {script}...")
         if "interfaz" in script:
-            p = subprocess.Popen([VENV_PATH, script])  # permite stdout/stderr
+            p = subprocess.run([VENV_PATH, script])  # permite stdout/stderr
         else:
             p = subprocess.Popen([VENV_PATH, script],
                                 stdout=subprocess.DEVNULL,
