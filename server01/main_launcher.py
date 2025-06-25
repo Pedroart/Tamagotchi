@@ -1,5 +1,6 @@
 import subprocess
 import os
+from interfaz import test
 
 # Ruta base del entorno virtual
 VENV_PATH = os.path.join(os.getcwd(), ".venv", "bin", "python")
