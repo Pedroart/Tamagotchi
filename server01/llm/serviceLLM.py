@@ -17,9 +17,9 @@ def generar_respuesta(prompt):
         "model": MODEL,
         "stream": False,
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.5,
-        "top_p" : 0.9,
-        "max_tokens": 15
+        "temperature": 0.3,
+        "top_p" : 0.7,
+        "max_tokens": 10
     }
     t0 = time.time()
     resp = requests.post(OLLAMA_URL, json=payload)
