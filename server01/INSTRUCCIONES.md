@@ -38,6 +38,7 @@ pip freeze > requirements.txt
 ```bash
 pkill -f serviceStt.py
 pkill -f serviceTTS_piper.py
+pkill -f serviceLLM.py
 pkill -f test.py
 
 sudo git fetch origin
