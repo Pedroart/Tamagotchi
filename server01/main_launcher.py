@@ -1,6 +1,5 @@
 import subprocess
 import os
-from interfaz import test
 
 # Ruta base del entorno virtual
 VENV_PATH = os.path.join(os.getcwd(), ".venv", "bin", "python")
@@ -9,6 +8,7 @@ VENV_PATH = os.path.join(os.getcwd(), ".venv", "bin", "python")
 SERVICIOS = [
     "stt/serviceStt.py",
     "tts/serviceTTS_piper.py",
+    "interfaz/test.py",
     # "ui_chat.py",  # descomenta si tienes UI
 ]
 
@@ -17,15 +17,18 @@ procesos = []
 try:
     for script in SERVICIOS:
         print(f"🚀 Lanzando {script}...")
-        p = subprocess.Popen([VENV_PATH, script],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL)
-        procesos.append(p)
+        if "interfaz" in script:
+            p = subprocess.Popen([VENV_PATH, script])  # permite stdout/stderr
+        else:
+            p = subprocess.Popen([VENV_PATH, script],
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL)
 
     print("✅ Todos los servicios están corriendo. Ctrl+C para detener.")
 
-    import curses
-    curses.wrapper(test.main)
+    # Esperar a que todos terminen (bloquea aquí)
+    for p in procesos:
+        p.wait()
 
 except KeyboardInterrupt:
     print("\n🛑 Interrupción detectada. Cerrando servicios...")
