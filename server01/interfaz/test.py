@@ -91,7 +91,7 @@ client.connect(MQTT_BROKER, MQTT_PORT, 60)
 client.loop_start()
 
 def main(stdscr):
-    global current_state, modo_actual
+    global current_state, modo_actual,changed
     curses.curs_set(0)
     stdscr.nodelay(True)
 
