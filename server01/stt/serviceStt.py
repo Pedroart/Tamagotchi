@@ -83,12 +83,16 @@ with suppress_stderr():
     )
 
 
-# Bucle principal
 with recorder:
-    while True:
-        if modo == "auto":
-            recorder.text(on_text)
-        elif modo == "manual":
-            if solicitar_escucha:
+    try:
+        while True:
+            if modo == "auto":
                 recorder.text(on_text)
-                solicitar_escucha = False
+
+            elif modo == "manual":
+                if solicitar_escucha:
+                    recorder.text(on_text)
+                    solicitar_escucha = False
+    except KeyboardInterrupt:
+        print("\n👋 Interrupción detectada. Cerrando STT...")
+

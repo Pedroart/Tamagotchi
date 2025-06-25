@@ -102,5 +102,5 @@ def main(stdscr):
 
         time.sleep(0.05)
 
-
-curses.wrapper(main)
+if __name__ == "__main__":
+    curses.wrapper(main)

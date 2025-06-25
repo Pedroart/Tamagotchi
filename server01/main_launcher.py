@@ -16,16 +16,18 @@ procesos = []
 try:
     for script in SERVICIOS:
         print(f"🚀 Lanzando {script}...")
-        p = subprocess.Popen([VENV_PATH, script])
+        p = subprocess.Popen([VENV_PATH, script]
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL)
         procesos.append(p)
 
     print("✅ Todos los servicios están corriendo. Ctrl+C para detener.")
 
-    # Esperar a que todos terminen (bloquea aquí)
-    for p in procesos:
-        p.wait()
+    import curses
+    curses.wrapper(test.main)
 
 except KeyboardInterrupt:
     print("\n🛑 Interrupción detectada. Cerrando servicios...")
     for p in procesos:
         p.terminate()
+

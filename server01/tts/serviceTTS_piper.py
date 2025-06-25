@@ -73,4 +73,9 @@ client.on_message = on_message
 client.connect(MQTT_BROKER, MQTT_PORT, 60)
 
 print("✅ Servicio TTS listo. Esperando mensajes...")
-client.loop_forever()
+try:
+    client.loop_forever()
+except KeyboardInterrupt:
+    print("\n👋 Interrupción detectada. Cerrando servicio TTS...")
+    client.disconnect()
+    print("🛑 Desconectado correctamente de MQTT.")
