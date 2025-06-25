@@ -17,7 +17,7 @@ def generar_respuesta(prompt, client):
         "model": MODEL,
         "stream": True,
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.3,
+        "temperature": 0.9,
         "top_p": 0.7,
         "max_tokens": 10
     }
@@ -41,8 +41,8 @@ def generar_respuesta(prompt, client):
             buffer += content
             # detectamos delimitador
             if any(sep in content for sep in (".", ";", ",","?","¡")):
-                print(f'Procesado: {buffer.strip()}')
                 client.publish(TOPIC_OUTPUT, buffer.strip())
+                #print(f'Procesado: {buffer.strip()}')
                 buffer = ""
 
         # si queda algo sin enviar al final
