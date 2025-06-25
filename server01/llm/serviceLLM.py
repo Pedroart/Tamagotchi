@@ -61,5 +61,11 @@ client = mqtt.Client()
 client.on_message = on_message
 client.connect(MQTT_BROKER, MQTT_PORT, 60)
 client.subscribe(TOPIC_INPUT)
-client.loop_start()
 
+print("✅ Servicio LLM listo. Esperando mensajes...")
+try:
+    client.loop_forever()
+except KeyboardInterrupt:
+    print("\n👋 Interrupción detectada. Cerrando servicio LLM...")
+    client.disconnect()
+    print("🛑 Desconectado correctamente de MQTT.")
