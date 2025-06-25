@@ -8,7 +8,7 @@ MQTT_PORT = 1883
 TOPIC_MODO = "voz/modo"
 TOPIC_ACCION = "voz/escuchar"
 TOPIC_TEXTO = "voz/texto"
-TOPIC_RESPUESTA = "habla/estado"
+TOPIC_RESPUESTA = "voz/estado"
 changed = True
 
 # Estados posibles
@@ -132,7 +132,7 @@ def main(stdscr):
             last_state = current_state
             last_tab = active_tab
             changed = False
-            
+
         time.sleep(0.05)
 
 
