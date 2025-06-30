@@ -1,42 +1,41 @@
 #!/bin/bash
 
-SESSION_SERVICIOS="asistente"
-SESSION_INTERFAZ="interfaz"
+SESSION_NAME="asistente"
 VENV="./.venv/bin/python"
 
 declare -A SCRIPTS=(
   ["STT"]="stt/serviceStt.py"
   ["TTS"]="tts/serviceTTS_piper.py"
   ["LLM"]="llm/serviceLLM.py"
+  ["UI"]="interfaz/test.py"
 )
 
-INTERFAZ_SCRIPT="interfaz/test.py"
-
-# 🧹 Eliminar sesiones si ya existen
-tmux has-session -t $SESSION_SERVICIOS 2>/dev/null && {
-  echo "🛑 Cerrando sesión anterior: $SESSION_SERVICIOS"
-  tmux kill-session -t $SESSION_SERVICIOS
+# 🧹 Eliminar sesión si ya existe
+tmux has-session -t $SESSION_NAME 2>/dev/null && {
+  echo "🛑 Cerrando sesión anterior: $SESSION_NAME"
+  tmux kill-session -t $SESSION_NAME
 }
 
-tmux has-session -t $SESSION_INTERFAZ 2>/dev/null && {
-  echo "🛑 Cerrando sesión anterior: $SESSION_INTERFAZ"
-  tmux kill-session -t $SESSION_INTERFAZ
-}
+echo "🧩 Creando sesión '$SESSION_NAME' con paneles 2x2..."
 
-# 🚀 Crear nueva sesión para servicios en segundo plano
-echo "🧩 Creando sesión '$SESSION_SERVICIOS' con servicios..."
-tmux new-session -d -s $SESSION_SERVICIOS
+# Crear nueva sesión con el primer script
+FIRST_KEY="${!SCRIPTS[@]}"  # primer key del array
+FIRST_SCRIPT=${SCRIPTS[$FIRST_KEY]}
+tmux new-session -d -s $SESSION_NAME -n main "$VENV $FIRST_SCRIPT"
 
+# Dividir en 4 paneles
+tmux split-window -h -t $SESSION_NAME:0         # Panel derecho
+tmux split-window -v -t $SESSION_NAME:0.0       # Panel abajo izquierdo
+tmux split-window -v -t $SESSION_NAME:0.1       # Panel abajo derecho
+
+# Ejecutar scripts en cada panel
+INDEX=0
 for nombre in "${!SCRIPTS[@]}"; do
   SCRIPT=${SCRIPTS[$nombre]}
-  echo "  ➕ $nombre -> $SCRIPT"
-  tmux new-window -t $SESSION_SERVICIOS -n $nombre "$VENV $SCRIPT"
-  sleep 1
+  echo "  ➕ Ejecutando $nombre -> $SCRIPT"
+  tmux send-keys -t "$SESSION_NAME:0.$INDEX" "$VENV $SCRIPT" C-m
+  ((INDEX++))
 done
 
-# 🚀 Crear sesión aparte para la interfaz
-echo "🖥️  Creando sesión '$SESSION_INTERFAZ' para la interfaz..."
-tmux new-session -d -s $SESSION_INTERFAZ "$VENV $INTERFAZ_SCRIPT"
-
-# 👉 Mostrar solo la interfaz
-tmux attach-session -t $SESSION_INTERFAZ
+# Mostrar tmux
+tmux attach-session -t $SESSION_NAME
