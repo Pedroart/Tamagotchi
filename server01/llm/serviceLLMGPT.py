@@ -24,7 +24,7 @@ def generar_respuesta(prompt, client):
         print("✅ TTS listo. Generando respuesta...")
 
     buffer = ""
-    response = openai.ChatCompletion.create(
+    response = client_openai.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
