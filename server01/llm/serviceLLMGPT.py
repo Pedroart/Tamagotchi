@@ -3,7 +3,7 @@ import openai
 import paho.mqtt.client as mqtt
 import threading
 import time
-
+from openai import OpenAI
 # MQTT config
 MQTT_BROKER = "localhost"
 MQTT_PORT = 1883
