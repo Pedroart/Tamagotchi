@@ -6,7 +6,7 @@ VENV="./.venv/bin/python"
 # Define scripts por orden
 SCRIPTS_SERVICIOS=(
   "stt/serviceStt.py"
-  "tts/serviceTTS_piper.py"
+  "tts/serviceTTS_piper2.py"
   "llm/serviceLLMGPT.py"
 )
 
