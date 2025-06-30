@@ -12,7 +12,7 @@ TOPIC_OUTPUT = "habla/texto"
 TOPIC_ESTADO = "habla/estado"
 
 # OpenAI config
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client_openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = "gpt-3.5-turbo"
 
 tts_listo = threading.Event()
