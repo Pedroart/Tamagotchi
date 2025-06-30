@@ -1,9 +1,13 @@
+from dotenv import load_dotenv
 import os
 import openai
 import paho.mqtt.client as mqtt
 import threading
 import time
 from openai import OpenAI
+
+load_dotenv()
+
 # MQTT config
 MQTT_BROKER = "localhost"
 MQTT_PORT = 1883
