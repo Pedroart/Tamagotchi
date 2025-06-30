@@ -32,12 +32,12 @@ tmux split-window -v -t $SESSION_NAME:0.0
 
 # Asignar los servicios a los paneles izquierdos
 tmux send-keys -t $SESSION_NAME:0.0 "$VENV ${SCRIPTS_SERVICIOS[0]}" C-m
-tmux send-keys -t $SESSION_NAME:0.2 "$VENV ${SCRIPTS_SERVICIOS[1]}" C-m
-tmux send-keys -t $SESSION_NAME:0.3 "$VENV ${SCRIPTS_SERVICIOS[2]}" C-m
+tmux send-keys -t $SESSION_NAME:0.1 "$VENV ${SCRIPTS_SERVICIOS[1]}" C-m
+tmux send-keys -t $SESSION_NAME:0.2 "$VENV ${SCRIPTS_SERVICIOS[2]}" C-m
 
 # Ejecutar UI en el panel derecho (panel 1)
-tmux send-keys -t $SESSION_NAME:0.1 "$VENV $SCRIPT_UI" C-m
+tmux send-keys -t $SESSION_NAME:0.3 "$VENV $SCRIPT_UI" C-m
 
 # 👉 Mostrar tmux
-tmux select-pane -t $SESSION_NAME:0.1
+tmux select-pane -t $SESSION_NAME:0.3
 tmux attach-session -t $SESSION_NAME
