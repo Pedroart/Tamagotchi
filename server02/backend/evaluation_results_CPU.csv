@@ -1,0 +1,51 @@
+filename,audio_duration_s,latency_s,speed_ratio,WER,CPU_percent,RAM_MB,GPU_MB,reference_text,hypothesis_text
+pef_05223_00229855194,5.03,1.61,0.32,0.0000,0.00,2.96,-1.50,Hoy voy a realizar uno de mis sueños de la infancia,Hoy voy a realizar uno de mis sueños de la infancia.
+pef_01208_00838317583,5.63,1.51,0.27,1.1429,0.00,0.07,-13.06,Tú tienes que encargarte de todo eso,you have to take care of all that
+pef_02484_00905494197,3.75,1.57,0.42,0.3750,0.00,1.00,-0.19,La cerveza cuesta solo treinta y cinco soles,La cerveza cuesta solo 35 soles.
+pef_07508_01951322847,5.55,1.58,0.28,1.2500,0.00,-0.52,-5.56,Ya están todas las películas en tu correo,and they are in all the movies in your email.
+pef_05223_00202326901,3.75,1.52,0.40,0.0000,0.00,0.62,-0.06,La película me llega al corazón,La película me llega al corazón.
+pef_07508_00789957431,4.44,1.57,0.35,1.3333,0.00,0.00,-0.06,¿En cuántos juegos mediterráneos ha participado?,How many Mediterranean games have you participated in?
+pef_03034_01110100402,6.40,1.59,0.25,0.0000,0.00,-0.76,2.00,Necesito una clase para principiantes.,Necesito una clase para principiantes.
+pef_07049_00320392382,4.61,1.60,0.35,0.0000,0.00,1.38,-2.06,¿Qué necesito para aplicar para una licencia de manejar?,¿Qué necesito para aplicar para una licencia de manejar?
+pef_01523_00649444726,8.36,1.67,0.20,1.0000,0.00,1.00,0.00,Durante la campaña política el candidato tuvo alrededor de sesenta apariciones en público,"During the political campaign, the candidate had around 60 public appearances."
+pef_02484_00315864267,4.61,1.61,0.35,0.0000,0.00,0.00,2.06,El pijama de rayas es azul,El pijama de rayas es azul.
+pef_07049_01995082950,3.93,1.54,0.39,0.2000,0.00,0.00,-1.00,¿Quién subió el mejor video?,¿Quién subió el mejor vídeo?
+pef_01208_00460863502,5.12,1.56,0.31,0.1667,0.00,0.00,-1.06,¿Va a haber olimpiadas de verano?,¿Va a ver olimpiadas de verano?
+pef_07049_01191486132,6.23,1.73,0.28,0.1818,0.00,-1.59,2.06,Quiero saber alguna información curiosa sobre el presidente Enrique Peña Nieto.,Quiero saber alguna información curiosa sobre el presidente Enrique Peñañeto.
+pef_07508_01523083721,4.86,1.49,0.31,0.0000,0.00,0.25,-1.19,No te entiendo nada,No te entiendo nada.
+pef_01523_00925664581,5.29,1.53,0.29,0.0000,0.00,0.25,-0.88,¿Cuál es la revista más importante?,¿Cuál es la revista más importante?
+pef_09334_00872047353,6.06,1.69,0.28,0.0000,0.00,0.25,2.06,Las máquinas de escribir antiguas pueden ser muy caras.,Las máquinas de escribir antiguas pueden ser muy caras.
+pef_02484_00725651928,5.80,1.63,0.28,0.1111,0.00,0.00,-1.75,"Ayer llovió mucho, y llegue tarde a mi reunión",Ayer lluvio mucho y llegue tarde a mi reunión.
+pef_01523_01006850709,7.68,1.66,0.22,0.0000,0.00,-1.03,-0.31,¿Cuáles son los requisitos que piden para entrar a la universidad?,¿Cuáles son los requisitos que piden para entrar a la universidad?
+pef_02484_00899757108,5.55,1.71,0.31,1.0769,0.00,1.38,2.06,Se armó una polémica por el asunto de que Maradona metió la mano,There was a controversy about the fact that Maradona put her hand into it.
+pef_02121_01731817729,7.68,1.71,0.22,0.0667,0.00,-1.30,-2.06,En estos momentos estoy enviando a sus mails unos links de unas meditaciones en YouTube,In estos momentos estoy enviando a sus mails unos links de unas meditaciones en YouTube
+pef_02121_02015014106,4.18,1.55,0.37,0.0000,0.00,0.38,0.00,¿Me puedes conseguir un analgésico?,¿Me puedes conseguir un analgésico?
+pef_02436_01644846765,6.40,1.73,0.27,0.0000,0.00,-0.44,2.06,Quiero la bolsa para un regalo de cumpleaños para Andrea.,Quiero la bolsa para un regalo de cumpleaños para Andrea.
+pef_03034_01746784936,5.80,1.56,0.27,0.0000,0.00,1.00,-1.00,¿Cuál es el color favorito más popular?,¿Cuál es el color favorito más popular?
+pef_07508_01463165561,5.80,1.79,0.31,0.0714,0.00,-1.09,-1.06,¿podrías verificar quién ganó la carrera de fórmula uno en México el año pasado?,¿Podrías verificar quién ganó la carrera de fórmula 1 en México el año pasado?
+pef_06136_00254772751,11.78,1.85,0.16,0.0667,0.00,1.63,2.06,Muchas veces nuestros clientes no tienen la información necesaria pero todo viene en la etiqueta,"Muchas veces nuestros clientes no tienen información necesaria, pero todo viene en la etiqueta."
+pef_09334_01365312239,5.80,1.61,0.28,0.0000,0.00,0.00,-2.06,El único tipo de música que me gusta es la clásica.,El único tipo de música que me gusta es la clásica.
+pef_01208_01568048020,3.75,1.49,0.40,0.0000,0.00,0.00,0.00,¿Te gustan los helados?,¿Te gustan los helados?
+pef_02121_01119451946,6.23,1.60,0.26,0.9167,0.00,0.25,1.44,Estoy muy motivada para meterme a jugar a un equipo de fútbol,I'm very motivated to join a football team.
+pef_05223_00158688687,4.78,1.55,0.32,0.0000,0.00,0.00,0.62,Los corazones de pollo son una delicia,Los corazones de pollo son una delicia.
+pef_03349_00202555384,8.87,1.73,0.19,0.0667,0.00,-1.79,-2.06,La Inteligencia Artificial está con nosotros desde mediados de los años cincuenta del siglo pasado,La Inteligencia Artificial está con nosotros desde mediados de los años 50 del siglo pasado.
+pef_05223_00158509979,5.80,1.68,0.29,0.0000,0.00,1.75,1.44,Quiero tener una serpiente que crezca un metro máximo,Quiero tener una serpiente que crezca un metro máximo.
+pef_03349_01612338135,11.43,1.78,0.16,0.0000,0.00,-1.75,-0.56,"Según el periódico Universal, las bicicletas causan tres accidentes al día.","Según el periódico universal, las bicicletas causan tres accidentes al día."
+pef_01208_00800476712,5.29,1.63,0.31,1.6250,0.00,1.50,-0.88,Es importante que manejes bien la letra e,"It is important that you handle it well, I brought it to you."
+pef_01208_01380657051,4.78,1.58,0.33,0.8000,0.00,0.00,1.44,¿Quién subió el mejor video?,Who uploaded the best video?
+pef_02436_01527516553,5.89,1.69,0.29,0.1000,0.00,0.12,0.62,Haz la reserva para que llegue con tiempo al concierto.,¡Haz la reserva para que llegue con tiempo el concierto!
+pef_05223_01880313975,4.95,1.51,0.30,0.0000,0.00,0.00,-2.06,Estoy muy ocupada con el trabajo,Estoy muy ocupada con el trabajo.
+pef_07049_01519986602,5.72,1.63,0.29,0.2222,0.00,0.00,0.00,"Ayer llovió mucho, y llegue tarde a mi reunión",Ayer lluvio mucho y llegue tarde mi reunión.
+pef_08784_01532917569,4.95,1.54,0.31,0.2500,0.00,0.00,1.44,Los sandwiches están fríos,Los anguches están fríos.
+pef_02484_01054087994,7.17,1.77,0.25,0.0000,0.00,-1.59,-1.12,¿Quieres aprender el idioma a nivel de negocios o lo quieres para una cuestión más cotidiana?,¿Quieres aprender el idioma a nivel de negocios o lo quieres para una cuestión más cotidiana?
+pef_03349_02117142654,4.52,1.46,0.32,0.0000,0.00,0.62,-0.31,Está muy cansado,Está muy cansado.
+pef_03397_00774087456,5.55,1.69,0.30,0.0000,0.00,1.00,1.44,La conferencia es sobre la importancia del aseo personal en el trabajo,La conferencia es sobre la importancia del aseo personal en el trabajo.
+pef_03397_00157677962,7.00,1.78,0.25,0.0000,0.00,-1.62,-1.12,Para que el sabor de la comida inglesa realmente resalte se recomienda un vino más dulzón,"Para que el sabor de la comida inglesa realmente resalte, se recomienda un vino más dulzón."
+pef_08421_00659323232,5.89,1.52,0.26,0.0000,0.00,1.62,-0.31,¿Me ayudas a hacer los deberes?,¿Me ayudas a hacer los deberes?
+pef_02484_01397036079,4.27,1.56,0.36,0.4000,0.00,0.00,2.06,¿Ganó algún premio esa película?,Gano algún premio de esa película?
+pef_09697_01949763491,7.51,1.76,0.23,0.0714,0.00,-1.62,-2.06,El jugador salió en el minuto catorce por una molestia en el muslo derecho,El jugador salió en el minuto 14 por una molestia en el muslo derecho.
+pef_05223_01850578145,3.50,1.45,0.42,0.0000,0.00,0.50,0.00,Tengo muchas dudas,Tengo muchas dudas.
+pef_07049_01401799110,3.67,1.66,0.45,0.0000,0.00,0.12,2.06,¿Cuánto dinero quieres gastar en la bolsa?,¿Cuánto dinero quieres gastar en la bolsa?
+pef_00610_00410119501,7.51,1.69,0.22,1.2308,0.00,-0.54,-2.06,Según la televisión y los medios ha habido bastantes muertos por el terremoto,"According to the TV and media, there have been a lot of deaths on the earthquake."
+pef_09334_01806563323,2.90,1.52,0.53,0.0000,0.00,0.25,-3.06,¿Cómo te fue el día de hoy?,¿Cómo te fue el día de hoy?
+pef_08784_00946124714,6.91,1.67,0.24,0.2000,0.00,-0.30,2.06,Montevideo se encuentra situada en el Río de la Plata,Monte video se encuentra situada en el Río de la Plata.
