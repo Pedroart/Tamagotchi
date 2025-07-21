@@ -1,0 +1,51 @@
+filename,audio_duration_s,latency_s,speed_ratio,WER,CPU_percent,RAM_MB,GPU_MB,reference_text,hypothesis_text
+pef_03034_00737113640,7.00,7.61,1.09,0.2143,0.00,172.04,-18.81,Es una ladrona experta que roba un banco sin que nadie se de cuenta,Es una ladrón experta que roba un banco sin que nadie se decuenta.
+pef_02484_01758652107,4.78,5.18,1.08,0.1667,0.00,0.88,15.75,¿En qué calle está la casa?,En qué calle está en la casa?
+pef_02436_00861900809,8.45,8.98,1.06,0.0000,0.00,0.88,-16.06,Estoy aburrido con los libros que estoy leyendo y quiero que me recomiendes uno más divertido.,Estoy aburrido con los libros que estoy leyendo y quiero que me recomiendes uno más divertido.
+pef_06136_01065128380,11.35,11.91,1.05,0.1250,0.00,-1.76,0.00,El precio del boleto del concierto por persona y sin descuento es de trescientos veinte soles,El precio del boleto del concierto por persona y sin descuento es de 320 soles.
+pef_02484_00339970642,5.97,6.44,1.08,0.1250,0.00,1.00,16.00,Todas las apuestas han quedado inválidas dado que el partido no se pudo llevar a cabo,"Todas las opuestas han quedado invalidas, dado que el partido no se pudo llevar a cabo."
+pef_02121_01691803823,6.40,6.89,1.08,0.0000,0.00,0.25,-16.00,"Tengo una junta de negocios con la firma de abogados, ¿se acuerda?",Tengo una junta de negocios con la firma de abogados. ¿Se acuerda?
+pef_09334_02028756242,8.02,8.60,1.07,0.0833,0.00,0.38,0.00,"Ayer estuve un museo de Arte Moderno, y ví una exposición buenísima.",Ayer estuve un museo de arte moderno y vi una exposición buenísima.
+pef_03397_00521773071,4.78,5.18,1.08,0.0000,0.00,0.00,16.00,¿En el restaurante también se come carne?,En el restaurante también se come carne.
+pef_09334_01608873118,8.28,8.72,1.05,0.0909,0.00,0.25,-16.00,Hay más de setenta estaciones en el centro de la ciudad.,Hay más de 70 estaciones en el centro de la ciudad.
+pef_06136_01491791281,7.17,7.62,1.06,0.0000,0.00,0.00,0.00,Los niños tienen mucha imaginación,Los niños tienen mucha imaginación.
+pef_07049_00163381574,4.78,5.16,1.08,0.0000,0.00,0.00,16.00,¿Qué está sucediendo en la política de Estados Unidos?,¿Qué está sucediendo en la política de Estados Unidos?
+pef_02121_01714113868,5.21,5.71,1.10,0.2727,0.00,0.00,0.00,De hecho te puedo mandar directamente el link a tu iPad,De hecho te pome a andar directamente el link a tu iPad.
+pef_02436_01450030673,7.42,7.93,1.07,0.0000,0.00,0.00,-16.00,Es recomendable tomar té caliente sin cafeína antes de dormir.,Es recomendable tomar té caliente sin cafeína antes de dormir.
+pef_08784_01624964367,5.80,6.30,1.08,0.2222,0.00,0.00,16.00,Por las tardes se escucha música en la Plaza.,Por la tarde se escucha música en la plaza.
+pef_02436_00900197823,4.78,5.19,1.09,0.0000,0.00,0.00,0.00,No te entiendo nada,No te entiendo nada.
+pef_02436_01620278099,5.63,6.12,1.09,0.1429,0.00,0.00,0.00,¿Buscas un café con algo en especifico?,Buscas un café con algo en específico.
+pef_02436_00497820569,5.97,6.42,1.07,0.3333,0.00,0.00,0.00,"Ayer llovió mucho, y llegue tarde a mi reunión",Ayer yo vio mucho y llegué tarde a mi reunión.
+pef_07508_01710672167,4.95,5.39,1.09,0.8000,0.00,0.00,0.00,Esos departamentos no aceptan mascotas,Eso es de partamientos no aceptan mascotas.
+pef_07049_01677562718,4.95,5.38,1.09,0.0000,0.00,0.00,0.00,La granizada destruyó toda la plantación de lechuga,La granizada destruyó toda la plantación de lechuga.
+pef_01208_01524771642,7.08,7.51,1.06,0.5714,0.00,0.00,-16.00,Estoy bien emocionada me voy a Senegal,"Esto es bien emocionada, me voy a ser legal."
+pef_02436_00984111255,4.35,4.74,1.09,0.0000,0.00,0.00,16.00,Tiene el tiempo contado,Tiene el tiempo contado.
+pef_07508_01713700775,5.03,5.53,1.10,0.4000,0.00,0.00,0.00,¿Queremos saber cómo va el ballet acuático en las olimpiadas?,Queremos saber cómo ve el balé de acuático en las olimpias.
+pef_06136_00003492229,8.53,9.06,1.06,0.3333,0.00,-2.23,-16.00,Me puedes confirmar si ya está hecha la reservación,Me puedes confirmar si ya está de hecho a la reservación.
+pef_03034_00103197228,8.11,8.68,1.07,0.0000,0.00,1.05,0.00,Las estadísticas muestran que hay más accidentes de autos durante la noche que durante el día.,Las estadísticas muestran que hay más accidentes de autos durante la noche que durante el día.
+pef_00610_00466212383,5.29,5.71,1.08,0.2222,0.00,0.50,16.00,En twitter se han registrado cuatrocientos millones de tweets,En Twitter se han registrado 400 millones de Twitter.
+pef_03397_01595635898,3.58,4.05,1.13,0.2000,0.00,0.00,0.00,Jose Luis quisiera comprar dólares,"José Luis, quisiera comprar dólares."
+pef_05223_00215546534,5.38,5.78,1.08,0.1111,0.00,0.00,0.00,Creo que tiene rota la tibia y el peroné,Creo que tiene rota la tibia y el perone.
+pef_02436_00806788846,4.78,5.19,1.09,0.2222,0.00,0.00,0.00,Quiero saber que tipo pizza es la más saludable.,Quiero saber qué tipo de pizza es la más saludable.
+pef_04310_02086481451,5.12,5.71,1.12,0.1111,0.00,0.00,0.00,Tiene una película muy famosa que se llama Hugo,Tiene una película muy famosa que se llama Uvo.
+pef_08784_01714083373,7.34,7.82,1.07,0.0000,0.00,0.25,-20.00,Quiero averiguar como se llama un director de teatro,Quiero averiguar como se llama un director de Teatro.
+pef_02436_01939097601,5.89,6.30,1.07,0.2222,0.00,0.00,12.12,¿Quieres que te mande las reseñas de diferentes medios?,¿Quieres que te mande la reseña de diferentes medios?
+pef_05223_00611173034,5.80,6.28,1.08,0.3636,0.00,0.00,0.00,Llevo unos meses a dieta pero se me antojo una pizza,"Llego unos meses a dieta, pero se me han tojo una pisa."
+pef_04310_01689868327,5.46,5.92,1.08,0.1250,0.00,0.00,0.00,La granizada destruyó toda la plantación de lechuga,La granizada destruyió toda la plantación de lechuga.
+pef_02121_00653295378,6.23,6.75,1.08,0.0000,0.00,0.00,-16.00,"Necesito que me ayudes a buscar centros de reciclaje, tengo mucho cartón",Necesito que me ayudes a buscar centros de reciclaje.  Tengo mucho cartón.
+pef_03034_00039904718,6.57,7.06,1.07,0.0000,0.00,0.38,0.00,"Las tejas rojas del tejado no son de México, son de Texas","Las tejas rojas del tejado no son de México, son de Texas."
+pef_09697_01558186319,5.72,6.23,1.09,0.2857,0.00,0.00,16.00,Tocar el xilófono es mi hobby favorito,tocar el cilófono es mi jovi favorito.
+pef_03349_00722033116,5.72,6.19,1.08,0.4286,0.00,0.00,0.00,Si llueve hoy no sabré qué hacer.,"Si yo eve hoy, no sabré que hacer."
+pef_02121_01318741894,6.31,7.08,1.12,0.2000,0.00,0.00,-16.00,¿Queremos saber cómo va el ballet acuático en las olimpiadas?,Queremos saber cómo va el vale de acuático en las olimpiadas.
+pef_09334_02063377841,6.31,7.02,1.11,0.0000,0.00,0.00,0.00,Tienes razón es mucho mejor andar en bici.,"Tienes razón, es mucho mejor andar en bici."
+pef_03397_00830484291,6.66,7.28,1.09,0.1429,0.00,0.00,0.00,María Helena me puedes informar de la cotización del euro el día de hoy,"María Elena, ¿me puedes informar de la cotización del leuro el día de hoy?"
+pef_02121_01383475167,5.72,6.23,1.09,0.2500,0.00,0.00,16.00,"Se buena con las personas, ayúdalas, y no juzgues a los demás.","Se bueno con las personas, ayudelas y no justues a los demás."
+pef_08784_01487306415,6.66,7.16,1.08,0.1250,0.00,0.00,-16.00,En la tercera fila quedan ocho lugares libres,En la tercera fila quedan 8 lugares libres.
+pef_07049_01582600680,4.78,5.19,1.09,0.3636,0.00,0.00,16.00,Los niños quieren comer dulces pero yo no se que darles.,"Las niñas quieren comer dulces, pero yo no sé qué darles."
+pef_01208_00474563488,5.63,6.13,1.09,0.2857,0.00,0.00,0.00,Me preocupa la inminente temporada de huracanes,Me preocupa la inminente de porada de huracanes.
+pef_03034_00457476201,5.12,5.58,1.09,0.0000,0.00,0.00,0.00,La historia es muy triste.,La historia es muy triste.
+pef_06136_01603528443,7.51,8.00,1.06,0.0000,0.00,0.25,-14.94,Siempre es interesante ver cosas nuevas,Siempre es interesante ver cosas nuevas.
+pef_01208_01893482684,6.23,6.74,1.08,0.1000,0.00,0.00,-0.19,Quisiera reservar dos boletos por favor pero en primera clase,"quisiera reservar dos boletos por favor, pede en primera clase."
+pef_05223_00439729849,6.31,6.84,1.08,0.0909,0.00,0.00,0.00,¿Podrías decirme cuál es la canción numero uno a nivel mundial?,¿Podrías decirme cuál es la canción número uno a nivel mundial?
+pef_03349_00918335438,8.28,9.06,1.09,0.0000,0.00,0.38,0.00,¿Te interesa el arte contemporáneo?,¿Te interesa el arte contemporáneo?
+pef_08784_01387913465,8.62,9.18,1.07,0.1538,0.00,0.00,0.00,Ojalá pudiéramos invitar a ésta reunion con la señora María a varios escritores,Ojalá pudiéramos invitar a esta reunión con la señora María a varios escritores.
