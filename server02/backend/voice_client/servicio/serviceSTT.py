@@ -1,5 +1,5 @@
 from servicio.serviceController import ServiceController
-from utils.EventBus import EventBus
+from utils.EventBus import event_bus
 from utils.const import SERVICE_NAME_STT,SERVICE_URI_STT
 import os
 from langchain_openai import ChatOpenAI
@@ -63,9 +63,14 @@ class ServiceSTT(ServiceController):
             if tipo == "partial":
                 self.last_partial = await self.agregar_parcial(texto)
                 self.logger.info(f"Parcial actualizado: {self.last_partial}")
+
+                event_bus.emit(SERVICE_NAME_STT+"_PARCIAL", self.last_final)
+
             elif tipo == "final":
                 self.last_final = await self.agregar_parcial(texto)
+                
                 self.logger.info(f"Final actualizado: {self.last_final}")
+                event_bus.emit(SERVICE_NAME_STT+"_FINAL", self.last_final)
                 self.reset_memoria
 
         except Exception as e:
