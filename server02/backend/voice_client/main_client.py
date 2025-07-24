@@ -64,7 +64,7 @@ async def unified_client():
                 # Si existe un parcial anterior, comparamos
                 if parcial_anterior:
                     # Usamos comparación semántica con LLM si está disponible
-                    data_llm = await comparar_parciales_llm(parcial_anterior, msg)
+                    data_llm = comparar_parciales_llm(parcial_anterior, msg)
                     imprimir_resultados_llm(data_llm)
                     texto_consolidado = data_llm["consolidado"]
 

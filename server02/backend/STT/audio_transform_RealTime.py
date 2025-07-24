@@ -7,6 +7,7 @@ import logging
 import tempfile, os
 import soundfile as sf
 import numpy as np
+import json
 
 INIT_MODEL_TRANSCRIPTION = "tiny"
 INIT_MODEL_DEVICE = "cpu"
@@ -125,7 +126,8 @@ class AudioTransform:
         if self.audio_buffer.getbuffer().nbytes > 0:
             text = self.transcribe_final(self.audio_buffer)
             logger.info(f"✅ Transcripción FINAL: {text}")
-            await websocket.send(text)
+            payload = json.dumps({"type": "final", "text": text})
+            await websocket.send(payload)
         self.reset_buffer()
 
     async def _run_partial(self, websocket):
@@ -134,7 +136,8 @@ class AudioTransform:
             text = self.transcribe_partial(self.audio_buffer)
             if text.strip():
                 logger.info(f"📝 Parcial: {text}")
-                await websocket.send(f"(parcial) {text}")
+                payload = json.dumps({"type": "partial", "text": text})
+                await websocket.send(payload)
         finally:
             self.partial_running = False
             self.last_partial_time = time.time()

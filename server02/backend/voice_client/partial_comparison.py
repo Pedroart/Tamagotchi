@@ -1,17 +1,37 @@
-
 import re
 import difflib
 import json
+import os
 
 # --- Opcional: solo si usas un LLM ---
 try:
+    # Intentar cargar clave desde .env si existe
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    # Leer clave de entorno
+    openai_key = os.getenv("OPENAI_API_KEY")
+    print(openai_key)
     from langchain_openai import ChatOpenAI
-    llm_comparador = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
-    USE_LLM = True
+
+    if openai_key:
+        llm_comparador = ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0.0,
+            api_key=openai_key
+        )
+        USE_LLM = True
+        print("✅ LLM habilitado con clave desde OPENAI_API_KEY")
+    else:
+        # Si no hay clave, desactivar LLM
+        llm_comparador = None
+        USE_LLM = False
+        print("⚠️ No se encontró OPENAI_API_KEY, usando fallback difflib")
+
 except ImportError:
     llm_comparador = None
     USE_LLM = False
-
+    print("⚠️ LangChain no disponible, usando fallback difflib")
 
 # =========================================================
 # 1. Normalización y similitud básica (backup)
@@ -55,6 +75,30 @@ def comparar_parciales_difflib(anterior: str, actual: str):
 # 2. Comparación semántica usando LLM (si disponible)
 # =========================================================
 
+def safe_json_parse(content: str):
+    """
+    Limpia la respuesta del LLM para extraer solo el JSON válido,
+    eliminando bloques de código Markdown si están presentes.
+    """
+    # 1. Si viene envuelto en bloque ```json ... ```
+    content = content.strip()
+    if content.startswith("```"):
+        # Quitar las primeras 3 comillas invertidas + posible 'json'
+        content = re.sub(r"^```[a-zA-Z0-9]*", "", content).strip()
+        # Quitar las últimas ```
+        content = re.sub(r"```$", "", content).strip()
+    
+    # 2. Buscar el primer bloque { ... }
+    match = re.search(r"\{.*\}", content, re.DOTALL)
+    if not match:
+        return None
+
+    try:
+        return json.loads(match.group(0))
+    except Exception as e:
+        print("⚠️ Error parseando JSON:", e)
+        return None
+
 async def comparar_parciales_llm(anterior: str, actual: str) -> dict:
     """
     Usa un LLM para comparar parciales.
@@ -62,6 +106,8 @@ async def comparar_parciales_llm(anterior: str, actual: str) -> dict:
       - estables: lista de fragmentos confirmados
       - cambios: lista con pares {"de": "...", "a": "..."}
       - consolidado: mejor versión limpia
+    Devuelve SOLO una versión limpia, corregida y natural del texto.
+    Elimina repeticiones innecesarias y corrige errores de dictado.
     """
     # Si no hay LLM, usamos difflib como fallback
     if not USE_LLM or llm_comparador is None:
@@ -105,8 +151,10 @@ async def comparar_parciales_llm(anterior: str, actual: str) -> dict:
     resp = await llm_comparador.ainvoke(prompt)
 
     try:
-        data = json.loads(resp.content)
+            
+        data = safe_json_parse(resp.content)
     except Exception:
+        print("Error Procesando Texto LLM",Exception)
         # Si no se puede parsear, devolvemos un mínimo
         data = {
             "estables": [],
