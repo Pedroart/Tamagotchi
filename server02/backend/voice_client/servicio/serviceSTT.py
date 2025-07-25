@@ -38,6 +38,7 @@ class ServiceSTT(ServiceController):
     async def start_stream(self):
         """Notifica inicio de sesión STT"""
         await self.send("__START__")
+        self.reset_memoria()
 
     async def send_audio_chunk(self, audio_bytes: bytes):
         """Envía un chunk de audio PCM int16 mono 16kHz"""
@@ -64,7 +65,7 @@ class ServiceSTT(ServiceController):
                 self.last_partial = await self.agregar_parcial(texto)
                 self.logger.info(f"Parcial actualizado: {self.last_partial}")
 
-                event_bus.emit(SERVICE_NAME_STT+"_PARCIAL", self.last_final)
+                event_bus.emit(SERVICE_NAME_STT+"_PARCIAL", self.last_partial)
 
             elif tipo == "final":
                 self.last_final = await self.agregar_parcial(texto)

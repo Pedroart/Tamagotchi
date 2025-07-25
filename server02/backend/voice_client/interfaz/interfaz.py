@@ -79,6 +79,8 @@ class Interfaz:
         self.animacion_datos: Dict | None = None
         self.animaciones: List[Dict] = []
 
+        self.mic_on = False
+
         # Se suscribe al EventBus para escuchar cambios de animación
         event_bus.subscribe("ui/animacion", self.recibir_animacion)
 
@@ -163,6 +165,22 @@ class Interfaz:
         for e in pygame.event.get():
             if e.type == pygame.QUIT or (e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
                 self.running = False
+
+            if e.type == pygame.KEYDOWN and e.key == pygame.K_SPACE:
+                    self.toggle_mic()
+
+    def toggle_mic(self):
+        """
+        Alterna el estado del micrófono y publica el evento en el EventBus.
+        """
+        self.mic_on = not self.mic_on
+
+        # Publicar estado en el bus
+        event_bus.emit("mic/state", self.mic_on)
+
+        # Mensaje de debug
+        estado = "ON" if self.mic_on else "OFF"
+        print(f"🎤 Micrófono -> {estado}")
 
     def render_loop(self):
         """Bucle principal de renderizado."""

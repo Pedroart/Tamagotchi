@@ -7,6 +7,7 @@ from kokoro_onnx import Kokoro
 from queue import Queue, Empty
 import re
 import websockets
+import time
 
 # ======================
 # Configuración
@@ -18,16 +19,22 @@ WS_PORT = 8765
 # Mapeo de emociones → voz + velocidad
 # ======================
 EMOCIONES = {
-    "alegre": {"voice": "af_heart", "speed": 1.3},
-    "triste": {"voice": "af_heart", "speed": 0.7},
-    "neutral": {"voice": "af_heart", "speed": 1.0},
+    "alegre": {"voice": "af_bella", "speed": 1.3},
+    "triste": {"voice": "af_bella", "speed": 0.7},
+    "neutral": {"voice": "af_bella", "speed": 1.0},
 }
 
 # ======================
 # Cargar modelo Kokoro
 # ======================
 print("🔊 Cargando modelo Kokoro...")
-voice = Kokoro("TTS/kokoro-v1.0.int8.onnx", "TTS/voices-v1.0.bin")
+voice1 = Kokoro("TTS/kokoro-v1.0.int8.onnx", "TTS/voices-v1.0.bin")
+voice2 = Kokoro("TTS/kokoro-v1.0.int8.onnx", "TTS/voices-v1.0.bin")
+
+print("🚀 Precalentando modelo Kokoro...")
+voice1.create("Hola", voice="af_bella", speed=1.0, lang="es")
+voice2.create("Hola", voice="af_bella", speed=1.0, lang="es")
+
 sample_rate = 24000  # Frecuencia estándar de Kokoro
 
 # ======================
@@ -38,58 +45,127 @@ cola_texto = Queue()   # Oraciones pendientes por sintetizar
 cola_audio = Queue()   # Audio pendiente por reproducir
 clientes_websocket = set()
 
+# Para mantener el orden de los fragmentos
+orden_global = 0
+
 # ======================
 # Función para dividir texto en oraciones cortas
 # ======================
-def split_oraciones(texto: str, max_palabras=10):
-    """
-    Divide el texto por .,¡!¿? o conjunciones y/o.
-    Si una oración sigue siendo larga, la fragmenta en bloques de max_palabras.
-    """
-    partes = re.split(r'[.,¡!¿?\n]|\sy\s|\sY\s|\so\s|\sO\s', texto)
-    oraciones_finales = []
 
-    for parte in partes:
-        parte = parte.strip()
-        if not parte:
+FIN_DE_LOTE = "__FIN__"
+
+import re
+
+def split_oraciones(texto: str, max_palabras=10, min_palabras=None):
+    """
+    Divide texto en fragmentos equilibrados:
+    1) Separa por oraciones (puntuación y saltos de línea).
+    2) Cada oración > max_palabras se trocea en sub-oraciones de max_palabras.
+    3) Junta sub-oraciones adyacentes hasta que cada chunk tenga entre min_palabras y max_palabras.
+    """
+    if min_palabras is None:
+        # Por defecto, un 40% de max_palabras
+        min_palabras = max(1, max_palabras * 40 // 100)
+
+    # 1) Fragmentar por oraciones (conservando la puntuación)
+    sentencias = re.split(r'(?<=[\.\?!])\s+|\n+', texto.strip())
+    piezas = []
+
+    # 2) Trocear oraciones largas
+    for s in sentencias:
+        s = s.strip()
+        if not s:
             continue
-
-        palabras = parte.split()
+        palabras = s.split()
         if len(palabras) <= max_palabras:
-            oraciones_finales.append(parte)
+            piezas.append(s)
         else:
+            # trocear en bloques de max_palabras
             for i in range(0, len(palabras), max_palabras):
-                fragmento = " ".join(palabras[i:i + max_palabras])
-                oraciones_finales.append(fragmento)
+                trozo = " ".join(palabras[i:i + max_palabras])
+                piezas.append(trozo)
 
-    return oraciones_finales
+    # 3) Agrupar en chunks equilibrados
+    resultado = []
+    chunk = []
+    cuenta = 0
+
+    def cerrar_chunk():
+        nonlocal chunk, cuenta
+        if chunk:
+            resultado.append(" ".join(chunk).strip())
+        chunk, cuenta = [], 0
+
+    for trozo in piezas:
+        n = len(trozo.split())
+        # Si al agregar sobrepasamos max, cerramos chunk actual
+        if cuenta + n > max_palabras:
+            # Si el chunk actual se queda muy corto (< min), lo dejamos igual;
+            # de lo contrario, lo cerramos y comenzamos uno nuevo.
+            cerrar_chunk()
+
+        # Agregamos el trozo al chunk
+        chunk.append(trozo)
+        cuenta += n
+
+        # Si justo llegamos al max o quedamos dentro de [min, max], podemos cerrarlo
+        if cuenta >= min_palabras:
+            cerrar_chunk()
+
+    # Añadimos cualquier resto
+    cerrar_chunk()
+    return resultado
 
 # ======================
-# Broadcast de estado
+# Broadcast de estado (robusto)
 # ======================
 async def broadcast_estado(estado, extra=None):
-    """Envía estado a todos los clientes WebSocket conectados."""
-    if clientes_websocket:
-        msg = {"estado": estado}
-        if extra:
-            msg.update(extra)
-        payload = json.dumps(msg)
-        await asyncio.gather(*(c.send(payload) for c in clientes_websocket))
+    if not clientes_websocket:
+        return
+    msg = {"estado": estado}
+    if extra:
+        msg.update(extra)
+    payload = json.dumps(msg)
+
+    to_remove = []
+    for ws in list(clientes_websocket):
+        try:
+            await ws.send(payload)
+        except Exception:
+            # cliente ya no responde
+            to_remove.append(ws)
+    # eliminar clientes desconectados sin error
+    for ws in to_remove:
+        clientes_websocket.discard(ws)
 
 # ======================
 # 🧠 Sintetizador (productor)
 # ======================
-def sintetizador():
+kokoro_lock = threading.Lock()
+
+def sintetizador(instancia_id):
+    """
+    Hilo sintetizador que usa una instancia específica de Kokoro.
+    instancia_id = 1 usa voice1, instancia_id = 2 usa voice2
+    """
+    voice_instance = voice1 if instancia_id == 1 else voice2
+
     while True:
         try:
-            texto, emocion = cola_texto.get(timeout=1)
+            texto, emocion, orden = cola_texto.get(timeout=1)
         except Empty:
             continue
 
-        print(f"🎙️ Sintetizando oración: [{emocion}] {texto}")
+        # ✅ FIN DE LOTE → mandar marcador directo con orden
+        if texto == FIN_DE_LOTE:
+            cola_audio.put((orden, None, FIN_DE_LOTE))
+            cola_texto.task_done()
+            continue
+
+        print(f"🎙️ [Hilo {instancia_id}] Sintetizando oración [{orden}]: [{emocion}] {texto}")
         try:
             cfg = EMOCIONES.get(emocion, EMOCIONES["neutral"])
-            samples, sr = voice.create(
+            samples, sr = voice_instance.create(
                 texto,
                 voice=cfg["voice"],
                 speed=cfg["speed"],
@@ -97,36 +173,65 @@ def sintetizador():
             )
 
             if parar_evento.is_set():
-                print("⛔ Interrupción durante síntesis.")
+                print(f"⛔ Hilo {instancia_id}: interrupción durante síntesis.")
             else:
                 audio_int16 = (samples * 32767).astype(np.int16).tobytes()
-                cola_audio.put((audio_int16, texto))
+                cola_audio.put((orden, audio_int16, texto))
 
         except Exception as e:
-            print(f"❌ Error al sintetizar: {e}")
+            print(f"❌ Hilo {instancia_id} error al sintetizar: {e}")
 
         cola_texto.task_done()
 
 # ======================
-# 🔊 Reproductor (consumidor)
+# 🔊 Reproductor (consumidor ordenado)
 # ======================
 def reproductor():
-    # Usamos un solo OutputStream abierto de forma persistente
+    esperado = 1
+    en_lote = False
+    buffer_ordenado = {}
+
     with sd.OutputStream(samplerate=sample_rate, channels=1, dtype='int16') as stream:
         while True:
-            # Esperar hasta que haya al menos 2 bloques en cola para mayor fluidez
-            while cola_audio.qsize() < 2:
-                threading.Event().wait(0.05)
-
             try:
-                audio_buffer, texto_actual = cola_audio.get(timeout=1)
+                orden, audio_buffer, texto_actual = cola_audio.get(timeout=1)
             except Empty:
+                threading.Event().wait(0.05)
                 continue
 
-            asyncio.run(broadcast_estado("hablando", {"texto": texto_actual}))
-            data = np.frombuffer(audio_buffer, dtype=np.int16)
-            stream.write(data)
-            asyncio.run(broadcast_estado("parado", {"texto": texto_actual}))
+            buffer_ordenado[orden] = (audio_buffer, texto_actual)
+
+            # procesar en orden secuencial
+            while esperado in buffer_ordenado:
+                audio_buffer, texto_actual = buffer_ordenado.pop(esperado)
+
+                # FIN_DE_LOTE → termina lote
+                if texto_actual == FIN_DE_LOTE:
+                    main_loop.call_soon_threadsafe(
+                        asyncio.create_task,
+                        broadcast_estado("parado", {})
+                    )
+                    print("✅ Lote finalizado correctamente")
+                    en_lote = False
+                    esperado = 1          # <-- vuelve a 1
+                    buffer_ordenado.clear()
+                    ultimo_fragmento = time.time()
+
+                    break  # salir del while interno
+
+                # Primer bloque del lote → mandar "hablando"
+                if not en_lote:
+                    main_loop.call_soon_threadsafe(
+                        asyncio.create_task,
+                        broadcast_estado("hablando", {}),
+                    )
+                    en_lote = True
+
+                # reproducir audio
+                data = np.frombuffer(audio_buffer, dtype=np.int16)
+                stream.write(data)
+
+                esperado += 1
 
             cola_audio.task_done()
 
@@ -134,6 +239,7 @@ def reproductor():
 # Handler WebSocket
 # ======================
 async def handler(websocket):
+    global orden_global
     clientes_websocket.add(websocket)
     print("📡 Cliente conectado")
     await websocket.send(json.dumps({"estado": "listo"}))
@@ -151,10 +257,20 @@ async def handler(websocket):
                 texto = data.get("text", "").strip()
                 emocion = data.get("emotion", "neutral")
                 if texto:
+                    texto = re.sub(r'\s+', ' ', texto).strip()
+                    # 🔄 Reiniciar numeración de fragmentos para nuevo lote
+                    orden_global = 0
+
+                    # dividir y asignar orden
                     oraciones = split_oraciones(texto)
                     for o in oraciones:
-                        cola_texto.put((o, emocion))
-                    print(f"🗣️ Encoladas {len(oraciones)} oraciones con emoción '{emocion}'.")
+                        orden_global += 1
+                        cola_texto.put((o, emocion, orden_global))
+                    # al final también un FIN_DE_LOTE
+                    orden_global += 1
+                    cola_texto.put((FIN_DE_LOTE, emocion, orden_global))
+                    print(f"🗣️ Encoladas {len(oraciones)} oraciones + FIN_DE_LOTE")
+
 
             elif cmd == "stop":
                 print("🛑 Recibido comando STOP")
@@ -170,28 +286,32 @@ async def handler(websocket):
         print(f"❌ Error WS: {e}")
 
     finally:
-        clientes_websocket.remove(websocket)
+        clientes_websocket.discard(websocket)
         print("❌ Cliente desconectado")
 
 # ======================
 # Lanzar hilos productor/consumidor
 # ======================
-# 🔥 Lanzamos 2 hilos sintetizadores en paralelo para mayor velocidad
-for _ in range(2):
-    threading.Thread(target=sintetizador, daemon=True).start()
+main_loop = asyncio.new_event_loop()
+asyncio.set_event_loop(main_loop)
 
-# Un solo hilo reproductor
-threading.Thread(target=reproductor, daemon=True).start()
-
-# ======================
-# Iniciar servidor WebSocket
-# ======================
 async def ws_main():
     print(f"✅ WS TTS en ws://{WS_HOST}:{WS_PORT}")
-    async with websockets.serve(handler, WS_HOST, WS_PORT):
-        await asyncio.Future()
+    async with websockets.serve(
+        handler,
+        WS_HOST,
+        WS_PORT,
+    ):
+        await asyncio.Future()  # Mantener vivo
 
-try:
-    asyncio.run(ws_main())
-except KeyboardInterrupt:
-    print("\n👋 Cerrando servidor WS...")
+def start_ws_server():
+    main_loop.create_task(ws_main())
+    main_loop.run_forever()
+
+# Lanzar sintetizadores y reproductor antes del WS
+threading.Thread(target=sintetizador, args=(1,), daemon=True).start()
+threading.Thread(target=sintetizador, args=(2,), daemon=True).start()
+threading.Thread(target=reproductor, daemon=True).start()
+
+# Luego iniciamos servidor
+start_ws_server()
