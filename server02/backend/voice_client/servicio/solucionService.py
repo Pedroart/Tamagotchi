@@ -1,42 +1,66 @@
-import os
-from dotenv import load_dotenv
+from servicio.serviceController import ServiceController
 from utils.EventBus import event_bus
 from utils.const import SERVICE_NAME_STT
 from langchain_openai import ChatOpenAI
-import re
-import time
+from langchain_community.chat_models import ChatOllama
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+import os
 
 class SolucionService:
     def __init__(self):
+        self.llm_openai = None
+        self.llm_ollama = ChatOllama(
+            model="gemma:2b",
+            temperature=0.3,
+            model_kwargs={
+                "num_thread": 1,
+                "top_p": 0.3,
+                "num_ctx": 100,
+                "max_tokens": 8,
+            }
+        )  # Ligera y rápida
         self.llm = self._init_llm()
-        self.buffer = ""  # guarda último parcial
-        self.conversation_history = []  # memoria ligera de los últimos turnos
 
-        self.last_comment_time = datetime.min
-        
-        self.comment_interval = timedelta(seconds=3) # Intervalo mínimo entre comentarios (ajústalo a tu gusto)
-
+        self.buffer = ""
         self.ultimo_fragmento = ""
+        self.conversation_history = []
+        self.last_comment_time = datetime.min
+        self.comment_interval = timedelta(seconds=3)
 
-        # Suscribirse a eventos del STT
         event_bus.subscribe(SERVICE_NAME_STT + "_PARCIAL", self.procesar_comentarios)
         event_bus.subscribe(SERVICE_NAME_STT + "_PARCIAL", self.procesar_preliminar)
         event_bus.subscribe(SERVICE_NAME_STT + "_FINAL", self.on_final)
 
     def _init_llm(self):
-        """Inicializa el modelo LLM desde variables de entorno"""
         load_dotenv()
         openai_key = os.getenv("OPENAI_API_KEY")
 
         if openai_key:
-            return ChatOpenAI(
+            print("✅ Usando OpenAI como LLM principal")
+            self.llm_openai = ChatOpenAI(
                 model="gpt-4o-mini",
                 temperature=0.3,
                 api_key=openai_key
             )
+            return self.llm_openai
         else:
-            print("⚠️ No hay OPENAI_API_KEY, el servicio funcionará sin LLM")
+            print("⚠️ No se encontró OPENAI_API_KEY. Usando Ollama (gemma)")
+            return self.llm_ollama
+
+    async def _fallback_invoke(self, prompt_or_messages):
+        """Invoca el LLM con fallback: primero OpenAI, luego Ollama si falla"""
+        try:
+            if self.llm_openai:
+                return await self.llm_openai.ainvoke(prompt_or_messages)
+        except Exception as e:
+            print(f"⚠️ Error con OpenAI, usando Ollama: {e}")
+
+        # fallback automático
+        try:
+            return await self.llm_ollama.ainvoke(prompt_or_messages)
+        except Exception as e:
+            print(f"❌ Error también con Ollama: {e}")
             return None
 
     async def procesar_comentarios(self, texto: str):
@@ -117,7 +141,9 @@ class SolucionService:
             {"role": "user", "content": texto}
         ]
 
-        resp = await self.llm.ainvoke(messages)
+        resp = await self._fallback_invoke(messages)
+        if not resp:
+            return "NONE"
         salida = resp.content.strip().splitlines()[0]
 
         # Normalizamos
@@ -181,7 +207,10 @@ class SolucionService:
             })
 
         try:
-            resp = await self.llm.ainvoke(messages)
+            resp = await self._fallback_invoke(messages)
+            if not resp:
+                return "(sin respuesta por ahora)"
+
             respuesta = resp.content.strip()
 
             # Guardar turno en historial para mantener memoria
@@ -195,5 +224,5 @@ class SolucionService:
             return respuesta
 
         except Exception as e:
-            print(f"⚠️ Error generando respuesta: {e}")
+            print(f"⚠️ Error inesperado generando respuesta: {e}")
             return "(sin respuesta por ahora)"

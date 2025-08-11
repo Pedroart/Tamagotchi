@@ -3,6 +3,8 @@ from utils.EventBus import event_bus
 from utils.const import SERVICE_NAME_STT,SERVICE_URI_STT
 import os
 from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatOllama
+
 from dotenv import load_dotenv
 import json
 from collections import deque
@@ -16,24 +18,48 @@ class ServiceSTT(ServiceController):
         self.queue = deque(maxlen=max_parciales)
 
         # ✅ LLM integrado dentro de la clase
-        self.llm = self._init_llm()
+        self.llm_openai, self.llm_ollama = self._init_llms()
+        self.llm = self.llm_openai or self.llm_ollama
+
 
         # Listener para procesar parciales/finales
         self.add_listener(self._service_listener)
 
-    def _init_llm(self):
+
+    def _init_llms(self):
+        """Inicializa ambos modelos LLM (OpenAI y Ollama si está disponible)"""
         load_dotenv()
         openai_key = os.getenv("OPENAI_API_KEY")
 
+        llm_openai = None
+        llm_ollama = None
+
         if openai_key:
-            return ChatOpenAI(
+            print("✅ OpenAI detectado.")
+            llm_openai = ChatOpenAI(
                 model="gpt-4o-mini",
-                temperature=0.0,
+                temperature=0.3,
                 api_key=openai_key
             )
         else:
-            self.logger.error("No hay OPENAI_API_KEY, el STT funcionará sin consolidación LLM")
-            return None
+            print("⚠️ No hay OPENAI_API_KEY.")
+
+        try:
+            llm_ollama = ChatOllama(
+                model="gemma:2b",  # cambia según lo que tengas descargado
+                temperature=0.3,
+                model_kwargs={
+                    "num_thread": 1,
+                    "top_p": 0.3,
+                    "num_ctx": 100,
+                    "max_tokens": 8,
+                }
+            )
+            print("✅ Ollama listo.")
+        except Exception as e:
+            print(f"⚠️ No se pudo inicializar Ollama: {e}")
+
+        return llm_openai, llm_ollama   
 
     async def start_stream(self):
         """Notifica inicio de sesión STT"""
@@ -112,10 +138,18 @@ class ServiceSTT(ServiceController):
         
         try:
             resp = await self.llm.ainvoke(prompt)
-            texto_limpio = resp.content.strip()
-            return texto_limpio
-
+            return resp.content.strip()
         except Exception as e:
-            self.logger.warning(f"Error consolidando con LLM: {e}")
-            # Si falla, devolver lo último
-            return nuevo
+            self.logger.warning(f"Error consolidando con LLM primario: {e}")
+
+            if self.llm is self.llm_openai and self.llm_ollama:
+                self.logger.warning("🔁 Cambiando a modelo local (Ollama).")
+                self.llm = self.llm_ollama
+                try:
+                    resp = await self.llm.ainvoke(prompt)
+                    return resp.content.strip()
+                except Exception as e2:
+                    self.logger.warning(f"❌ Fallback también falló: {e2}")
+
+            return nuevo  # devuelves el último parcial si todo falla
+
