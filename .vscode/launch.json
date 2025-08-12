@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python Debugger: Flask",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flask",
+      "python": "${command:python.interpreterPath}",   // ← usa el venv seleccionado
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "FLASK_APP": "app.py",        // ajusta si es otro archivo
+        "FLASK_ENV": "development"
+      },
+      "envFile": "${workspaceFolder}/.env",            // opcional: carga variables del .env
+      "args": [
+        "run",
+        "--no-debugger",                               
+        "--no-reload"                                  
+      ],
+      "jinja": true,
+      "autoStartBrowser": false,
+      "justMyCode": true,
+      "subProcess": true
+    }
+  ]
+}

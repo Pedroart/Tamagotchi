@@ -1,6 +1,7 @@
 import pygame
 from core.utils import lerp
 from anim_lpc import Animator, blit_anchored_by_feet, scale_to_height
+from event_bus import event_bus
 
 class Player:
     def __init__(self, cfg, cam, bank):
@@ -44,9 +45,22 @@ class Player:
             self.c, self.r = nc, nr
             self.tmove = 0.0
             self.moving = True
+            event_bus.emit("player.move_start", to_col=nc, to_row=nr)
 
     def toggle_run(self, enabled):
         self.step_time = self.step_time_base * (0.65 if enabled else 1.0)
+
+    def play_anim(self, name: str, *, fps=None, loop=True, restart=True):
+        """Fuerza una animación por nombre del CSV (p.ej., 'slash_up')."""
+        if getattr(self, "anim", None):
+            try:
+                self.anim.set(name, fps=fps, loop=loop, restart=restart)
+            except Exception:
+                pass
+
+    def face(self, direction: str):
+        if direction in ("down", "up", "left", "right"):
+            self.facing = direction
 
     def _choose_anim(self):
         if not self.anim: return
@@ -70,11 +84,13 @@ class Player:
             self._wr = lerp(self.from_tile[1], self.to_tile[1], ease)
             if a >= 1.0:
                 self.moving = False
+                event_bus.emit("player.reached", col=self.c, row=self.r)
         else:
             self._wc, self._wr = float(self.c), float(self.r)
 
         self._choose_anim()
-        if self.anim: self.anim.update(dt)
+        if getattr(self, "anim", None):
+            self.anim.update(dt)
 
     def draw(self, screen):
         foot = ((self._wc + 0.5)*self.cfg["TILE_WORLD"], 0.0, (self._wr + 0.5)*self.cfg["TILE_WORLD"])

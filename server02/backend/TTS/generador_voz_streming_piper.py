@@ -111,7 +111,16 @@ async def handler(websocket):
 # === Servidor WebSocket ===
 async def ws_main():
     print(f"✅ WS TTS activo en ws://{WS_HOST}:{WS_PORT}")
-    async with websockets.serve(handler, WS_HOST, WS_PORT):
+    async with websockets.serve(
+        handler,
+        WS_HOST,
+        WS_PORT,
+        ping_interval=None,   # o None para desactivar pings
+        ping_timeout=30,
+        close_timeout=3,
+        max_queue=32,       # cola interna para backpressure
+        max_size=8*1024*1024
+    ):
         await asyncio.Future()
 
 def start_ws_server():
