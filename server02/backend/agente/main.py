@@ -48,6 +48,12 @@ def controller():
     
     event_bus.emit("answer.stop")
     event_bus.emit("voice.stop")
+
+    event_bus.emit("answer.generate", pad, texto)
+    time.sleep(3)
+    
+    event_bus.emit("answer.stop")
+    event_bus.emit("voice.stop")
     #event_bus.emit("answer.generate", pad, texto)
     
 

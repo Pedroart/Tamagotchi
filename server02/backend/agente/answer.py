@@ -94,6 +94,8 @@ class Answer:
         """
         # reset de resultados por invocación
         self._resultados = []
+        self.buffer = ""
+        self.scan_pos = 0
         nombre_emocion, intensidad = emocion
         sys_prompt = (
             "Eres un selector de animaciones para un personaje 2D.\n"
@@ -147,6 +149,7 @@ class Answer:
                 token = getattr(chunk, "content", "") or ""
                 self.on_llm_new_token(token)
         except StopStreaming:
+            self._stop_worker()
             logger.info("Streaming cortado intencionalmente (StopStreaming).")
             return None
             
@@ -208,12 +211,15 @@ class Answer:
         self._running = False
         self._cancel_stream.set()
 
+    def _stop_worker(self):
         logger.info("AnswerPlayer detenido")
         try:
             while True:
                 self._oraciones_queue.get_nowait()
         except Empty:
             pass
+        
+        self._cancel_stream.clear()
 
         self._running = True
 
