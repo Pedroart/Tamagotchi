@@ -24,7 +24,7 @@ class EventBus:
             fr = inspect.stack()[1]
             relfile = os.path.relpath(fr.filename)  # convierte a ruta relativa
             origin = f"{relfile}:{fr.lineno}::{fr.function}"
-            logger.debug(f"{event_name} from {origin} args={args} kw={kwargs}")
+            logger.info(f"{event_name} from {origin} args={args} kw={kwargs}")
         for cb in list(self._listeners.get(event_name, [])):
             if inspect.iscoroutinefunction(cb):
                 asyncio.create_task(cb(*args, **kwargs))

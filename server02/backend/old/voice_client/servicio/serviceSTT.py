@@ -69,12 +69,12 @@ class ServiceSTT(ServiceController):
     async def send_audio_chunk(self, audio_bytes: bytes):
         """Envía un chunk de audio PCM int16 mono 16kHz"""
         if not self.ws:
-            self.logger.error("No conectado, no se puede enviar audio.")
+            self.logger.info("No conectado, no se puede enviar audio.")
             return
         try:
             await self.ws.send(audio_bytes)
         except Exception as e:
-            self.logger.error(f"Error enviando audio: {e}")
+            self.logger.info(f"Error enviando audio: {e}")
 
     async def stop_stream(self):
         """Notifica fin de sesión STT"""

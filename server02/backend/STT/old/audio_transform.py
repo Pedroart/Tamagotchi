@@ -19,7 +19,7 @@ logger = logging.getLogger("AudioServer")
 '''
 logger.info("Servidor iniciado")
 logger.debug("Mensaje de depuración")
-logger.error("Error al procesar")
+logger.info("Error al procesar")
 '''
 
 

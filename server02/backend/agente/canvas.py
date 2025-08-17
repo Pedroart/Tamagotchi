@@ -135,7 +135,7 @@ class SpritePlayer:
         self.anim_lookup = {a.name: i for i, a in enumerate(self.animations)}
 
         if not self.animations:
-            logger.error("No hay animaciones cargadas. Revisa el CSV/sheet.")
+            logger.info("No hay animaciones cargadas. Revisa el CSV/sheet.")
             pygame.quit()
             return
 
@@ -216,8 +216,8 @@ class SpritePlayer:
         sheet = (self.base_dir / self.assets_dir / self.sheet_name).resolve()
         csvp = (self.base_dir / self.assets_dir / self.csv_name).resolve()
         if not sheet.exists() or not csvp.exists():
-            logger.error("No se encuentra el spritesheet o el CSV.")
-            logger.error("Sheet:", sheet, sheet.exists()); logger.error("CSV:", csvp, csvp.exists())
+            logger.info("No se encuentra el spritesheet o el CSV.")
+            logger.info("Sheet:", sheet, sheet.exists()); logger.info("CSV:", csvp, csvp.exists())
             sys.exit(1)
         return sheet, csvp
 
@@ -225,7 +225,7 @@ class SpritePlayer:
     def _parse_csv(self, csv_path: Path) -> List[Tuple[str, int, int, int]]:
         defs = []
         with open(csv_path, newline="", encoding="utf-8") as f:
-            for name, row_s, nframes_s in csv.reader(f):
+            for name, row_s, nframes_s, descripcion in csv.reader(f):
                 name = name.strip()
                 r = int(row_s)
                 n = max(1, int(nframes_s))

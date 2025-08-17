@@ -1,8 +1,8 @@
-parado,0,0
-hablar,1,2
-reir,2,3
-emociado,3,1
-saludo,4,0
-preocupacion,5,1
-molesta,6,0
-chock,7,0
+parado,0,0,Postura neutral tranquila y atenta
+hablar,1,2,Movimientos de boca expresivos para conversacion
+reir,2,3,Risa alegre y contagiosa llena de energia positiva
+emociado,3,1,Expresion animada con ojos brillantes y manos al frente
+saludo,4,0,Gesto amistoso con la mano levantada transmite cercania
+preocupacion,5,1,Mirada tensa y ojos abiertos transmite inquietud o susto
+molesta,6,0,Ceno fruncido y gesto serio clara senal de disgusto
+chock,7,0,Rostro congelado con ojos muy abiertos transmite sorpresa o impacto repentino

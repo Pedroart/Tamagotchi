@@ -79,7 +79,7 @@ class AudioTransform:
             segments, _ = self.model.transcribe(wav_path, language=self.language, vad_filter=False)
             return " ".join(seg.text for seg in segments)
         except Exception as e:
-            logger.error(f"❌ Error en _pcm_to_text: {e}")
+            logger.info(f"❌ Error en _pcm_to_text: {e}")
             return ""
         finally:
             if wav_path and os.path.exists(wav_path):

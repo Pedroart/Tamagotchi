@@ -75,7 +75,7 @@ class AudioTransform:
             segments, info = self.model.transcribe(tmp_path, language=self.language, vad_filter=False)
             text = " ".join(seg.text for seg in segments)
         except Exception as e:
-            logger.error(f"❌ Error al transcribir: {e}")
+            logger.info(f"❌ Error al transcribir: {e}")
             text = ""
         finally:
             os.unlink(tmp_path)

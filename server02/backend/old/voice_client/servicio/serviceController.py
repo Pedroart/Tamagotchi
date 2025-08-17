@@ -28,7 +28,7 @@ class ServiceController:
             self.logger.info(f"Conectado a {self.uri}")
             asyncio.create_task(self._listen_loop())
         except Exception as e:
-            self.logger.error(f"Error conectando a {self.uri}: {e}")
+            self.logger.info(f"Error conectando a {self.uri}: {e}")
             raise
 
     async def _listen_loop(self):
@@ -38,7 +38,7 @@ class ServiceController:
                 self.logger.debug(f"Mensaje recibido: {msg[:80]}...")
                 await self._notify_listeners(msg)
         except Exception as e:
-            self.logger.error(f"Error en listener {self.uri}: {e}")
+            self.logger.info(f"Error en listener {self.uri}: {e}")
 
     def add_listener(self, callback):
         """
@@ -57,7 +57,7 @@ class ServiceController:
                 else:
                     cb(msg)
             except Exception as e:
-                self.logger.error(f"Error en listener {cb.__name__}: {e}")
+                self.logger.info(f"Error en listener {cb.__name__}: {e}")
 
     async def send(self, data):
         """Enviar mensaje al servicio (acepta dict o str)"""
@@ -69,7 +69,7 @@ class ServiceController:
             await self.ws.send(payload)
             self.logger.debug(f"Enviado a {self.name}: {payload[:80]}...")
         except Exception as e:
-            self.logger.error(f"Error enviando a {self.uri}: {e}")
+            self.logger.info(f"Error enviando a {self.uri}: {e}")
 
     async def close(self):
         """Cerrar conexión WebSocket"""
