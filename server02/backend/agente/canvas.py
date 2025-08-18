@@ -55,8 +55,8 @@ class SpritePlayer:
         sprite_h: int = SPRITE_H_DEFAULT,
         fps_anim: int = FPS_ANIM_DEFAULT,
         bg_color: Tuple[int, int, int] = BG_COLOR_DEFAULT,
-        window_scale: int = 3,
-        fullscreen: bool = False,
+        window_scale: int = 2,
+        fullscreen: bool = True,
         vsync: bool = True,
         default_anim: Optional[str] = None,
     ):
@@ -192,9 +192,18 @@ class SpritePlayer:
             # Render
             screen.fill(self.bg_color)
             if anim.count > 0:
-                dst_xy = ((screen.get_width() - self.sprite_w) // 2,
-                          (screen.get_height() - self.sprite_h) // 2)
-                screen.blit(anim.frames[self.frame_idx], dst_xy)
+                #dst_xy = ((screen.get_width() - self.sprite_w) // 4,
+                #          (screen.get_height() - self.sprite_h) // 4)
+                #screen.blit(anim.frames[self.frame_idx], dst_xy)
+                frame = anim.frames[self.frame_idx]
+                if self.window_scale != 1:
+                    frame = pygame.transform.scale(
+                        frame,
+                        (self.sprite_w * self.window_scale, self.sprite_h * self.window_scale)
+                    )
+                dst_xy = ((screen.get_width() - frame.get_width()) // 2,
+                        (screen.get_height() - frame.get_height()) // 2)
+                screen.blit(frame, dst_xy)
 
             if font:
                 try:
