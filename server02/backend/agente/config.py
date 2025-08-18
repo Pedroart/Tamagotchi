@@ -11,3 +11,6 @@ SHEET_NAME_DEFAULT = "spritesheet.png"
 CSV_NAME_DEFAULT = "anims.csv"
 
 API_KEY_OPENAI = os.getenv("OPENAI_API_KEY")
+
+SERVICE_NAME_STT = "STT"
+SERVICE_URI_STT = "ws://localhost:55000"

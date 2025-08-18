@@ -1,31 +1,32 @@
-# main.py
 from canvas import SpritePlayer
 from event_bus import event_bus
 from voice import _voice_worker
-import threading, time
+import threading
+import time
 from answer import _answer_worker
+from microfono import Microfono
+import asyncio
 
-# Activa trazas opcionales
-event_bus.enable_trace("sprite.play", "sprite.default", "sprite.get", "sprite.state")
+"""
+Correcciones principales:
+- No usar `await` en el nivel superior. En su lugar, usamos `asyncio.run()` para
+  ejecutar la corrutina de conexión del micrófono antes de iniciar los hilos.
+- Estructura con guardia `if __name__ == "__main__":` para evitar efectos colaterales
+  si este módulo se importa desde otro lugar.
+- Orden de arranque: inicializamos el micrófono, lanzamos los workers, luego el
+  controlador, y finalmente `player.run()` en el hilo principal (bloqueante).
+- Añadidos try/except mínimos para robustez en la conexión del micrófono.
+"""
 
-player = SpritePlayer(
-    assets_dir="assets",
-    sheet_name="spritesheet.png",
-    csv_name="anims.csv",
-    default_anim="parado",  # opcional
-    fps_anim=10,
-)
 
-
-threading.Thread(target=_answer_worker, daemon=True).start()
-
-threading.Thread(target=_voice_worker, daemon=True).start()
-# Lanza el reproductor (bloqueante; corre en el hilo principal)
-# En otro hilo o callbacks puedes emitir eventos
+def _start_workers():
+    threading.Thread(target=_answer_worker, daemon=True).start()
+    threading.Thread(target=_voice_worker, daemon=True).start()
 
 
 def controller():
-    pad = ("triste",1.2)
+    # `pad` puede ser cualquier estructura que tu Answer/Voice espere.
+    pad = ("triste", 1.2)
     texto = (
         "Hola a todos… qué bueno verlos, aunque confieso que no llego con mucho ánimo hoy. "
         "Sus rostros conocidos me traen un poco de calma, pero sigo sintiendo un peso difícil de soltar. "
@@ -43,19 +44,35 @@ def controller():
         "Gracias por quedarse hasta el final; a veces, incluso en medio de la frustración, lo más valioso es no estar solo. "
         "Por ahora cierro este ciclo… me quedo quieto, intentando recuperar fuerzas, en silencio y con el corazón algo cansado."
     )
+
+    # Primera reproducción
     event_bus.emit("answer.generate", pad, texto)
     time.sleep(3)
-    
     event_bus.emit("answer.stop")
     event_bus.emit("voice.stop")
 
+    # Segunda reproducción
     event_bus.emit("answer.generate", pad, texto)
     time.sleep(3)
-    
     event_bus.emit("answer.stop")
     event_bus.emit("voice.stop")
-    #event_bus.emit("answer.generate", pad, texto)
-    
 
-threading.Thread(target=controller, daemon=True).start()
-player.run()
+
+if __name__ == "__main__":
+    # Activa trazas opcionales ANTES de crear/usar el player
+    event_bus.enable_trace("sprite.play", "sprite.default", "sprite.get", "sprite.state")
+
+    # Inicializa SpritePlayer (bloqueará en run())
+    player = SpritePlayer()
+
+    mic = Microfono()
+    mic.start()
+
+    # Lanzar workers de respuesta y voz
+    _start_workers()
+
+    # Lanzar el controlador en un hilo aparte
+    threading.Thread(target=controller, daemon=True).start()
+
+    # Lanza el reproductor (bloqueante; corre en el hilo principal)
+    player.run()

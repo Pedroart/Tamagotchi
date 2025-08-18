@@ -5,7 +5,8 @@ import pygame
 from dataclasses import dataclass
 from pathlib import Path
 from queue import SimpleQueue
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional, Dict, Callable
+
 
 from config import *
 from event_bus import event_bus
@@ -79,6 +80,7 @@ class SpritePlayer:
         self.loop_mode: bool = True
         self.playing: bool = True
         self.default_anim_name: Optional[str] = default_anim
+        
 
         # Cola de comandos para thread-safety
         self._cmd_queue: "SimpleQueue[Tuple[str, tuple, dict]]" = SimpleQueue()
@@ -168,6 +170,8 @@ class SpritePlayer:
                     running = False
                 elif e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
                     running = False
+                elif e.type == pygame.KEYDOWN and e.key == pygame.K_SPACE:
+                    event_bus.emit("speak.flag")
 
             # Procesa comandos del bus
             self._drain_commands()
