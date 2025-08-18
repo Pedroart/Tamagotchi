@@ -163,7 +163,8 @@ class Answer:
             raise StopStreaming
             
         self.buffer += token
-        final = self.buffer.find("},", self.scan_pos)
+        final = self.buffer.find("}", self.scan_pos)
+        
         if final != -1:
             inicio = self.buffer.find("{", self.scan_pos)
             self.scan_pos = final+1

@@ -16,8 +16,8 @@ INIT_LANGUAGE = "es"
 INIT_SERVER_PORT = 55000
 
 INACTIVITY_TIMEOUT     = 0.5   # segundos de silencio para flush
-PARTIAL_EVAL_INTERVAL  = 1.0   # cada cuántos seg hacemos un parcial
-WINDOW_SEC             = 5.0   # cuántos seg de contexto en cada parcial
+PARTIAL_EVAL_INTERVAL  = 0.3   # cada cuántos seg hacemos un parcial
+WINDOW_SEC             = 1.2   # cuántos seg de contexto en cada parcial
 SAMPLERATE             = 16000 # 16 kHz fija
 CHANNELS               = 1     # mono
 

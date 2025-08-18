@@ -1,11 +1,10 @@
 from canvas import SpritePlayer
 from event_bus import event_bus
 from voice import _voice_worker
-import threading
-import time
+import threading, time, asyncio
 from answer import _answer_worker
-from microfono import Microfono
-import asyncio
+from microfono import _microfono_worker
+from nucleo import Nucleo
 
 """
 Correcciones principales:
@@ -22,6 +21,7 @@ Correcciones principales:
 def _start_workers():
     threading.Thread(target=_answer_worker, daemon=True).start()
     threading.Thread(target=_voice_worker, daemon=True).start()
+    threading.Thread(target=_microfono_worker, daemon=True).start()
 
 
 def controller():
@@ -65,14 +65,13 @@ if __name__ == "__main__":
     # Inicializa SpritePlayer (bloqueará en run())
     player = SpritePlayer()
 
-    mic = Microfono()
-    mic.start()
+    nucleo = Nucleo()
 
     # Lanzar workers de respuesta y voz
     _start_workers()
 
     # Lanzar el controlador en un hilo aparte
-    threading.Thread(target=controller, daemon=True).start()
+    #threading.Thread(target=controller, daemon=True).start()
 
     # Lanza el reproductor (bloqueante; corre en el hilo principal)
     player.run()

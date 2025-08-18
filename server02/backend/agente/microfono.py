@@ -26,34 +26,25 @@ class Microfono(ServiceController):
 
         # ---- Event loop propio (hilo dedicado) ----
         self._loop = asyncio.new_event_loop()
-        self._loop_thread = threading.Thread(
-            target=self._run_loop, name="MicrofonoLoop", daemon=True
-        )
-        self._loop_thread.start()
 
         event_bus.subscribe("speak.flag", self._toggle_microfono)
         self.add_listener(self._service_listener)
 
-    # Arranque del loop propio
-    def _run_loop(self):
-        asyncio.set_event_loop(self._loop)
-        self._loop.run_forever()
-
-    # API pública para iniciar (conexión WS en su loop)
+    
     def start(self):
         self._submit(self.connect())
 
-    # Apagado ordenado (cierra WS, detiene stream y loop)
+    
     def shutdown(self):
         # detén audio/pipe y cierra WS dentro del loop
         self._submit(self._graceful_close())
-        # luego detén el loop
+        
         try:
             if not self._loop.is_closed():
                 self._loop.call_soon_threadsafe(self._loop.stop)
         except Exception:
             pass
-        # no hacemos join del daemon thread (opcional si quieres bloquear)
+        
 
     async def _graceful_close(self):
         try:
@@ -160,12 +151,19 @@ class Microfono(ServiceController):
             tipo = data.get("type")
             texto = data.get("text", "")
             if tipo == "partial":
-                logger.info(f"[STT][parcial] {texto}")
+                logger.info(f"Transcripcion Parcial {texto}")
                 event_bus.emit("stt.partial", texto)
             elif tipo == "final":
-                logger.info(f"[STT][final] {texto}")
+                logger.info(f"Transcripcion Final {texto}")
                 event_bus.emit("stt.final", texto)
             else:
-                logger.warning(f"[STT] tipo desconocido: {data}")
+                logger.warning(f"Transcripcion tipo desconocido: {data}")
         except Exception as e:
             logger.warning(f"Mensaje no JSON o inesperado: {msg} | Error: {e}")
+
+micro = Microfono()
+
+def _microfono_worker():
+    asyncio.set_event_loop(micro._loop)
+    micro.start()
+    micro._loop.run_forever()
