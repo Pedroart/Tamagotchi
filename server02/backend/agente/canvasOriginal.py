@@ -2,12 +2,11 @@
 import csv
 import sys
 import pygame
-import cv2            # === VISTA: OpenCV para homografía
-import numpy as np    # === VISTA: NumPy para arrays
 from dataclasses import dataclass
 from pathlib import Path
 from queue import SimpleQueue
 from typing import List, Tuple, Optional, Dict, Callable
+
 
 from config import *
 from event_bus import event_bus
@@ -32,7 +31,6 @@ class PlayerState:
     playing: bool
     frame_idx: int
 
-
 class SpritePlayer:
     """
     Reproductor de animaciones por eventos usando Pygame.
@@ -45,18 +43,7 @@ class SpritePlayer:
 
     Emite:
       - "sprite.state", dict(name, loop, playing, frame_idx)
-
-    Extensión: Interpolación de vista (homografía)
-      Teclas:
-        V: vista ON/OFF
-        F1: guardar Pose A (cuadrilátero actual)
-        F2: guardar Pose B
-        A:  cargar Pose A en editor
-        B:  cargar Pose B en editor
-        G:  mostrar/ocultar contorno
-        ←/→: ajustar t (0..1)
-      Mouse (Vista ON):
-        arrastrar los 4 puntos del cuadrilátero (0=TL,1=TR,2=BR,3=BL)
+      - "[WARN]/[ERR]" por print si algo sale mal
     """
     def __init__(
         self,
@@ -93,6 +80,7 @@ class SpritePlayer:
         self.loop_mode: bool = True
         self.playing: bool = True
         self.default_anim_name: Optional[str] = default_anim
+        
 
         # Cola de comandos para thread-safety
         self._cmd_queue: "SimpleQueue[Tuple[str, tuple, dict]]" = SimpleQueue()
@@ -104,15 +92,6 @@ class SpritePlayer:
         event_bus.subscribe("sprite.pause", self._on_pause)
         event_bus.subscribe("sprite.resume", self._on_resume)
         event_bus.subscribe("sprite.toggle_loop", self._on_toggle_loop)
-
-        # === VISTA: estado del editor/warp
-        self.view_on: bool = False
-        self.view_show_edges: bool = True
-        self.view_t: float = 0.0  # interpolación [0..1] entre A y B
-        self.view_drag_idx: Optional[int] = None
-        self.view_pts: Optional[np.ndarray] = None  # cuadrilátero actual para edición (4x2 float32)
-        self.view_poseA: Optional[np.ndarray] = None
-        self.view_poseB: Optional[np.ndarray] = None
 
     # ---------- Callbacks de eventos (solo encolan) ----------
     def _on_play(self, name: str, mode: str = "loop"):
@@ -166,6 +145,7 @@ class SpritePlayer:
         if self.default_anim_name and self.default_anim_name in self.anim_lookup:
             self.idx = self.anim_lookup[self.default_anim_name]
         else:
+            # si no se especifica, toma la primera con frames
             self.idx = self._first_with_frames(0)
 
         self.frame_idx = 0
@@ -177,18 +157,8 @@ class SpritePlayer:
         except Exception:
             font = None
 
-        # === VISTA: inicialización de puntos por defecto (rect centrado)
-        # Se definen respecto al tamaño de la ventana; iremos actualizando al vuelo
-        def _default_quad(w, h, fw, fh):
-            # fw,fh = tamaño del frame (considerando window_scale)
-            cx, cy = w//2, h//2
-            halfw, halfh = fw//2, fh//2
-            return np.array([
-                [cx - halfw, cy - halfh],  # TL
-                [cx + halfw, cy - halfh],  # TR
-                [cx + halfw, cy + halfh],  # BR
-                [cx - halfw, cy + halfh],  # BL
-            ], dtype=np.float32)
+        logger.info("ESC para salir. Control por EventBus: "
+              "sprite.play(name, mode='loop'|'once'), sprite.default, sprite.get, sprite.pause, sprite.resume, sprite.toggle_loop")
 
         running = True
         while running:
@@ -198,73 +168,10 @@ class SpritePlayer:
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
                     running = False
-                elif e.type == pygame.KEYDOWN:
-                    if e.key == pygame.K_ESCAPE:
-                        running = False
-
-                    # === VISTA: teclas de control
-                    elif e.key == pygame.K_v:
-                        self.view_on = not self.view_on
-                        # al encender la vista, inicializa el quad si está vacío
-                        if self.view_on and self.view_pts is None:
-                            # usa el tamaño del frame escalado actual
-                            fw = self.sprite_w * max(1, self.window_scale)
-                            fh = self.sprite_h * max(1, self.window_scale)
-                            self.view_pts = _default_quad(screen.get_width(), screen.get_height(), fw, fh)
-
-                    elif e.key == pygame.K_g:
-                        self.view_show_edges = not self.view_show_edges
-
-                    elif e.key == pygame.K_F1:
-                        # guarda Pose A
-                        if self.view_pts is not None:
-                            self.view_poseA = self.view_pts.copy()
-                            logger.info("[Vista] Guardada Pose A")
-                    elif e.key == pygame.K_F2:
-                        # guarda Pose B
-                        if self.view_pts is not None:
-                            self.view_poseB = self.view_pts.copy()
-                            logger.info("[Vista] Guardada Pose B")
-
-                    elif e.key == pygame.K_a:
-                        # cargar A al editor
-                        if self.view_poseA is not None:
-                            self.view_pts = self.view_poseA.copy()
-                            logger.info("[Vista] Cargada Pose A al editor")
-                    elif e.key == pygame.K_b:
-                        # cargar B al editor
-                        if self.view_poseB is not None:
-                            self.view_pts = self.view_poseB.copy()
-                            logger.info("[Vista] Cargada Pose B al editor")
-
-                    elif e.key == pygame.K_LEFT:
-                        self.view_t = max(0.0, self.view_t - 0.05)
-                    elif e.key == pygame.K_RIGHT:
-                        self.view_t = min(1.0, self.view_t + 0.05)
-
-                    # Compatibilidad tuya previa:
-                    elif e.key == pygame.K_SPACE:
-                        event_bus.emit("speak.flag")
-
-                # === VISTA: drag de puntos
-                if self.view_on:
-                    if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
-                        if self.view_pts is not None:
-                            mx, my = e.pos
-                            best, d2b = None, 1e12
-                            for i, (x, y) in enumerate(self.view_pts):
-                                d2 = (mx - x) * (mx - x) + (my - y) * (my - y)
-                                if d2 < d2b:
-                                    best, d2b = i, d2
-                            if d2b <= (12 * 12) * 9:  # radio de selección generoso
-                                self.view_drag_idx = best
-                    elif e.type == pygame.MOUSEBUTTONUP and e.button == 1:
-                        self.view_drag_idx = None
-                    elif e.type == pygame.MOUSEMOTION and self.view_drag_idx is not None:
-                        mx, my = e.pos
-                        mx = min(max(mx, 0), screen.get_width()-1)
-                        my = min(max(my, 0), screen.get_height()-1)
-                        self.view_pts[self.view_drag_idx] = (mx, my)
+                elif e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
+                    running = False
+                elif e.type == pygame.KEYDOWN and e.key == pygame.K_SPACE:
+                    event_bus.emit("speak.flag")
 
             # Procesa comandos del bus
             self._drain_commands()
@@ -280,86 +187,26 @@ class SpritePlayer:
                     else:
                         if self.frame_idx + 1 < anim.count:
                             self.frame_idx += 1
+                        # en "once", se queda en el último frame
 
             # Render
             screen.fill(self.bg_color)
-            frame = anim.frames[self.frame_idx] if anim.count > 0 else None
-
-            if frame is not None:
-                if not self.view_on:
-                    # --- Render clásico (centrado + scale) ---
-                    if self.window_scale != 1:
-                        frame_to_draw = pygame.transform.scale(
-                            frame,
-                            (self.sprite_w * self.window_scale, self.sprite_h * self.window_scale)
-                        )
-                    else:
-                        frame_to_draw = frame
-                    dst_xy = ((screen.get_width() - frame_to_draw.get_width()) // 2,
-                              (screen.get_height() - frame_to_draw.get_height()) // 2)
-                    screen.blit(frame_to_draw, dst_xy)
-
-                else:
-                    # --- VISTA: Render con homografía ---
-                    # 1) Asegurar cuadrilátero base si no existe
-                    if self.view_pts is None:
-                        fw = self.sprite_w * max(1, self.window_scale)
-                        fh = self.sprite_h * max(1, self.window_scale)
-                        self.view_pts = _default_quad(screen.get_width(), screen.get_height(), fw, fh)
-
-                    # 2) Elegir destino final (interpolado si hay A y B)
-                    dst_used = self.view_pts
-                    if (self.view_poseA is not None) and (self.view_poseB is not None):
-                        t = float(self.view_t)
-                        dst_used = (1.0 - t) * self.view_poseA + t * self.view_poseB
-                        dst_used = dst_used.astype(np.float32)
-
-                    # 3) Surface -> BGRA numpy
-                    # Nota: array3d da (W,H,3) RGB, hay que transponer
-                    arr_rgb = pygame.surfarray.array3d(frame)      # (W,H,3)
-                    arr_rgb = np.transpose(arr_rgb, (1, 0, 2))     # (H,W,3)
-                    # A canal alfa si existe; si no, creamos alfa=255
-                    if frame.get_masks()[3] != 0:
-                        # Surface tiene alfa; convertimos por pixel
-                        arr_rgba = pygame.surfarray.array_alpha(frame)
-                        arr_rgba = np.transpose(arr_rgba, (1, 0))  # (H,W)
-                        bgra = np.dstack([arr_rgb[...,2], arr_rgb[...,1], arr_rgb[...,0], arr_rgba])
-                    else:
-                        alpha = np.full((arr_rgb.shape[0], arr_rgb.shape[1], 1), 255, dtype=np.uint8)
-                        bgra = np.dstack([arr_rgb[...,2], arr_rgb[...,1], arr_rgb[...,0], alpha])
-
-                    # 4) Homografía: del rectángulo fuente (frame) al quad destino (pantalla)
-                    h_src, w_src = bgra.shape[:2]
-                    src_pts = np.array([[0,0],[w_src-1,0],[w_src-1,h_src-1],[0,h_src-1]], dtype=np.float32)
-                    Hm = cv2.getPerspectiveTransform(src_pts, dst_used.astype(np.float32))
-
-                    # 5) Warp al tamaño de la pantalla, preservando alfa
-                    warped = cv2.warpPerspective(
-                        bgra, Hm,
-                        (screen.get_width(), screen.get_height()),
-                        flags=cv2.INTER_LINEAR,
-                        borderMode=cv2.BORDER_CONSTANT,
-                        borderValue=(0,0,0,0)
+            if anim.count > 0:
+                #dst_xy = ((screen.get_width() - self.sprite_w) // 4,
+                #          (screen.get_height() - self.sprite_h) // 4)
+                #screen.blit(anim.frames[self.frame_idx], dst_xy)
+                frame = anim.frames[self.frame_idx]
+                if self.window_scale != 1:
+                    frame = pygame.transform.scale(
+                        frame,
+                        (self.sprite_w * self.window_scale, self.sprite_h * self.window_scale)
                     )
+                dst_xy = ((screen.get_width() - frame.get_width()) // 2,
+                        (screen.get_height() - frame.get_height()) // 2)
+                screen.blit(frame, dst_xy)
 
-                    # 6) BGRA -> RGBA y Surface
-                    rgba = warped[..., [2,1,0,3]]  # B,G,R,A -> R,G,B,A
-                    surf = pygame.image.frombuffer(rgba.tobytes(), (rgba.shape[1], rgba.shape[0]), "RGBA")
-                    screen.blit(surf, (0, 0))
-
-                    # 7) Dibujar contorno y puntos si se desea
-                    if self.view_show_edges and self.view_pts is not None:
-                        ptsi = dst_used.astype(int)
-                        pygame.draw.polygon(screen, (0, 255, 255), ptsi, 2)
-                        for i, (x, y) in enumerate(ptsi):
-                            pygame.draw.circle(screen, (255, 20, 200), (int(x), int(y)), 8)
-                            if font:
-                                screen.blit(font.render(str(i), True, (20,20,20)), (int(x)-6, int(y)-8))
-
-            # HUD simple
             if font:
                 try:
-                    anim = self.animations[self.idx]
                     info1 = font.render(
                         f"{anim.name} ({self.frame_idx+1}/{max(1,anim.count)})",
                         True, (220, 220, 220)
@@ -370,17 +217,6 @@ class SpritePlayer:
                     )
                     screen.blit(info1, (10, 8))
                     screen.blit(info2, (10, 30))
-
-                    # === VISTA: HUD
-                    if self.view_on:
-                        info3 = font.render(
-                            f"VISTA: ON  t={self.view_t:.2f}  (F1->A, F2->B, A/B cargar, ←/→ interp, G edges)",
-                            True, (180, 255, 220)
-                        )
-                        screen.blit(info3, (10, 52))
-                    else:
-                        info3 = font.render("VISTA: OFF (pulsa V para activar)", True, (140, 160, 170))
-                        screen.blit(info3, (10, 52))
                 except Exception:
                     pass
 
@@ -445,6 +281,7 @@ class SpritePlayer:
             playing=self.playing,
             frame_idx=self.frame_idx
         )
+        # Publica el estado actual
         event_bus.emit("sprite.state", {
             "name": state.name,
             "loop": state.loop,
