@@ -1,0 +1,11 @@
+angry,0,0,Rostro molesto con ceño fruncido y mirada fuerte
+blushing,0,1,Mejillas sonrojadas transmitiendo timidez o vergüenza
+normal,0,2,Expresión neutra relajada sin rasgos destacados
+sad,0,3,Mirada caída y labios curvados hacia abajo transmite tristeza
+smile,0,4,Sonrisa cálida que refleja alegría y cercanía
+surprised,0,5,Ojos muy abiertos y boca entreabierta refleja asombro
+exp_01,0,6,Expresión personalizada número 1
+exp_02,0,7,Expresión personalizada número 2
+exp_03,0,8,Expresión personalizada número 3
+exp_04,0,9,Expresión personalizada número 4
+exp_05,0,10,Expresión personalizada número 5
