@@ -62,6 +62,9 @@ export default function Live2DCanvas() {
   const [motions, setMotions] = useState<Record<string, any[]>>({})
   const [priority, setPriority] = useState<number>(3) // 0..3
 
+  const expressionsRef = useRef<{ index: number; label: string }[]>([])
+  useEffect(() => { expressionsRef.current = expressions }, [expressions])
+
   // Init PIXI + modelo
   useEffect(() => {
     if (!containerRef.current) return
@@ -118,7 +121,7 @@ export default function Live2DCanvas() {
   // Ejecutores usan refs por cierre (no globals)
   const executeAction = async (a: QueueAction) => {
     switch (a.type) {
-      case 'expression': return doExpression(modelRef.current, a)
+      case 'expression': return doExpression(modelRef.current, a, expressionsRef.current)
       case 'motion': return doMotion(modelRef.current, a)
       case 'audio': return doAudio(modelRef.current, a)
       case 'ping': return sleep(50)
@@ -156,7 +159,7 @@ export default function Live2DCanvas() {
       }
 
       ws.onmessage = (ev) => {
-        console.log(ev);
+        console.log(ev.data)
         try {
           const msg = JSON.parse(String(ev.data))
           if (msg?.kind === 'action' && isQueueAction(msg.payload)) {
@@ -271,23 +274,36 @@ export default function Live2DCanvas() {
 }
 
 // —— Ejecutores ——
-async function doExpression(model: any, { index, name }: { index?: number; name?: string }) {
+async function doExpression(
+  model: any,
+  { index, name }: { index?: number; name?: string },
+  exprList: { index: number; label: string }[] = []
+) {
   if (!model) return
   try {
+    let i = -1
+
     if (name != null) {
-      const settings: any = model.internalModel?.settings
-      const rawExpr: any[] = settings?.expressions || settings?.FileReferences?.Expressions || []
-      const i = rawExpr.findIndex((ex: any, idx: number) => {
-        const label = ex?.name || ex?.Name || basename(ex?.File || ex?.Path) || `expr_${idx}`
-        return label === name
-      })
-      if (i >= 0) model.expression(i)
+      // Busca por el label exactamente como aparece en el <select>
+      i = exprList.findIndex(
+        (e) => e.label.toLowerCase() === String(name).toLowerCase()
+      )
     } else if (typeof index === 'number') {
-      model.expression(index)
+      // Resuelve el índice “visual” del select al índice real
+      // (en tu mapeo, index ya es el índice real de model.expression)
+      i = index
+      // Si en algún momento cambias el mapeo, puedes hacer:
+      // const found = exprList.find(e => e.index === index)
+      // i = found ? found.index : -1
     }
-  } catch (e) { console.warn('expression', e) }
+
+    if (i >= 0) model.expression(i)
+  } catch (e) {
+    console.warn('expression', e)
+  }
   await sleep(120)
 }
+
 
 async function doMotion(model: any, { group, index = 0, priority = 3 }: { group: string; index?: number; priority?: number }) {
   if (!model) return
@@ -302,27 +318,29 @@ async function doMotion(model: any, { group, index = 0, priority = 3 }: { group:
   } catch (e) { console.warn('motion', e) }
 }
 
-async function doAudio(model: any, { src, crossOrigin = 'anonymous', waitEnd = true }: { src: string; crossOrigin?: string; waitEnd?: boolean }) {
+async function doAudio(model: any, {
+  src, volume = 1, expression, resetExpression = true,
+  crossOrigin = 'anonymous', waitEnd = true,
+}: {
+  src: string; volume?: number; expression?: number|string;
+  resetExpression?: boolean; crossOrigin?: string; waitEnd?: boolean;
+}) {
   if (!model || !src) return
-  try {
-    const audio = new Audio()
-    audio.src = src
-    audio.crossOrigin = crossOrigin
-    audio.preload = 'auto'
-    await audio.play()
-    // Algunas versiones aceptan elemento HTMLAudioElement:
-    // @ts-ignore
-    if (typeof model.speak === 'function') model.speak(audio)
-    if (waitEnd) {
-      await new Promise<void>((res) => {
-        audio.addEventListener('ended', () => res(), { once: true })
-        audio.addEventListener('error', () => res(), { once: true })
-      })
-    } else {
-      await sleep(200)
-    }
-  } catch (e) { console.warn('audio', e) }
+  const opts: any = { volume, crossOrigin }
+  if (expression !== undefined) opts.expression = expression
+  if (resetExpression !== undefined) opts.resetExpression = resetExpression
+
+  let done: Promise<void> | null = null
+  if (waitEnd) {
+    done = new Promise<void>(res => {
+      opts.onFinish = () => res()
+      opts.onError  = () => res()
+    })
+  }
+  model.speak(src, opts) // 👈 STRING, no HTMLAudioElement
+  if (done) await done
 }
+
 
 // —— Control de vista ——
 async function doViewSet(model: any, app: PIXI.Application | null, a: { x?: number; y?: number; scale?: number; rotation?: number; anchorX?: number; anchorY?: number }) {
