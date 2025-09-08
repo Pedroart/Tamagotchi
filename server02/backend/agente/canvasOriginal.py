@@ -5,7 +5,7 @@ import pygame
 from dataclasses import dataclass
 from pathlib import Path
 from queue import SimpleQueue
-from typing import List, Tuple, Optional, Dict, Callable
+from typing import List, Tuple, Optional, Dict
 
 
 from config import *

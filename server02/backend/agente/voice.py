@@ -1,7 +1,6 @@
 from queue import SimpleQueue, Empty
 from dataclasses import dataclass
 from typing import Tuple, Optional
-import time
 import threading
 
 try:

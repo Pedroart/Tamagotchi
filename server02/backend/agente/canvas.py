@@ -7,7 +7,7 @@ import numpy as np    # === VISTA: NumPy para arrays
 from dataclasses import dataclass
 from pathlib import Path
 from queue import SimpleQueue
-from typing import List, Tuple, Optional, Dict, Callable
+from typing import List, Tuple, Optional, Dict
 
 from config import *
 from event_bus import event_bus
