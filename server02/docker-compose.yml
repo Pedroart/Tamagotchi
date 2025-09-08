@@ -1,0 +1,15 @@
+services:
+  tamagotchi-stt:
+    build: .
+    container_name: tamagotchi-stt
+    
+    # Solo puerto STT
+    ports:
+      - "55000:55000"  # Puerto STT WebSocket
+    
+    # Configuración básica
+    stdin_open: true
+    tty: true
+    
+    # Reinicio automático si falla
+    restart: unless-stopped

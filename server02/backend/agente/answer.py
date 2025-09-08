@@ -6,7 +6,6 @@ from queue import SimpleQueue, Empty
 
 from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
-from langchain.callbacks.base import BaseCallbackHandler
 
 from config import *
 from event_bus import event_bus

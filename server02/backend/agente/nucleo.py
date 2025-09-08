@@ -1,12 +1,8 @@
-import json, re, csv, threading, random
-from pathlib import Path
-from time import perf_counter
-from typing import Tuple, List, Dict
-from queue import SimpleQueue, Empty
+import threading, random
+from typing import List, Dict
 
 from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
-from langchain.callbacks.base import BaseCallbackHandler
 
 import emociones
 from config import *

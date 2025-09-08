@@ -5,7 +5,6 @@ Estudiarlo
 import numpy as np
 import soundcard as sc
 import webrtcvad
-import time
 from collections import deque
 import warnings
 
