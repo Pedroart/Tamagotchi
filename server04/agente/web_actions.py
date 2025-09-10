@@ -140,8 +140,39 @@ class WebActions:
 
         try:
             # No necesitamos recibir nada; solo mantener la conexión viva.
-            async for incoming in websocket:
-                logger.debug(f"[web_actions] recibido de {peer}: {incoming!r}")# Si en el futuro quieres aceptar comandos entrantes, parsea aquí.
+             async for incoming in websocket:
+                # Acepta:
+                #  1) texto plano "flag"
+                #  2) JSON {"cmd":"flag"}  o  {"flag": true}
+                try:
+                    should_flag = False
+
+                    if isinstance(incoming, (bytes, bytearray)):
+                        # opcional: si llega binario, ignora
+                        continue
+
+                    txt = incoming.strip() if isinstance(incoming, str) else ""
+                    if txt.lower() == "flag":
+                        should_flag = True
+                    else:
+                        try:
+                            obj = json.loads(incoming)
+                            if isinstance(obj, dict):
+                                if obj.get("cmd") == "flag" or obj.get("flag") is True:
+                                    should_flag = True
+                        except Exception:
+                            # No es JSON; simplemente ignoramos si no es "flag"
+                            pass
+
+                    if should_flag:
+                        event_bus.emit("speak.flag")
+                        try:
+                            await websocket.send(json.dumps({"kind": "ack", "event": "speak.flag"}))
+                        except Exception:
+                            pass
+                    # Si no es flag, lo ignoramos silenciosamente.
+                except Exception as e:
+                    logger.debug(f"[web_actions] error procesando mensaje entrante: {e}")
                 
         except Exception as e:
             logger.info(f"[web_actions] WS error con {peer}: {e}")

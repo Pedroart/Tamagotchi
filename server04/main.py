@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
   _start_workers()
 
-  test_microfono_10s()
+  #test_microfono_10s()
 
       # Mantener proceso vivo
   try:

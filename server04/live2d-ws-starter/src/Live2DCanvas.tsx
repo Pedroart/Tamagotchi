@@ -51,10 +51,19 @@ export default function Live2DCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const appRef = useRef<PIXI.Application | null>(null)
   const modelRef = useRef<any>(null)
+  const wsRef = useRef<WebSocket | null>(null)
 
+  const [awaiting, setAwaiting] = useState(false)
+  const awaitingRef = useRef(false)
+  useEffect(() => { awaitingRef.current = awaiting }, [awaiting])
+
+  const [listening, setListening] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [wsState, setWsState] = useState<'disconnected'|'connecting'|'connected'>('disconnected')
+
+  // ⭐ Nuevo: panel flotante ocultable
+  const [panelOpen, setPanelOpen] = useState(true)
 
   // --- UI de expresiones & motions
   const [expressions, setExpressions] = useState<{ index: number; label: string }[]>([])
@@ -69,7 +78,8 @@ export default function Live2DCanvas() {
   useEffect(() => {
     if (!containerRef.current) return
 
-    const app = new PIXI.Application({ resizeTo: window, backgroundAlpha: 0, antialias: true })
+    // ⭐ El canvas ocupa todo el contenedor (que será full-viewport)
+    const app = new PIXI.Application({ resizeTo: containerRef.current, backgroundAlpha: 0, antialias: true })
     appRef.current = app
     containerRef.current.appendChild(app.view as HTMLCanvasElement)
 
@@ -82,7 +92,7 @@ export default function Live2DCanvas() {
         if (disposed) return
         modelRef.current = model
         app.stage.addChild(model)
-        centerAndScale(app, model)
+        centerAndScale(app, model) // ⭐ centrado inicial
 
         // Expresiones
         const settings: any = model.internalModel?.settings
@@ -106,11 +116,17 @@ export default function Live2DCanvas() {
       }
     })()
 
+    // ⭐ Resize robusto: se centra y escala ante cambios del contenedor
     const onResize = () => { if (!appRef.current || !modelRef.current) return; centerAndScale(appRef.current, modelRef.current) }
     window.addEventListener('resize', onResize)
 
+    // ⭐ ResizeObserver por si el contenedor cambia de tamaño por CSS/layout
+    const ro = new ResizeObserver(() => onResize())
+    if (containerRef.current) ro.observe(containerRef.current)
+
     return () => {
       window.removeEventListener('resize', onResize)
+      ro.disconnect()
       disposed = true
       try { appRef.current?.destroy(true, { children: true }) } catch {}
       appRef.current = null
@@ -153,29 +169,33 @@ export default function Live2DCanvas() {
       setWsState('connecting')
       try { ws = new WebSocket(url) } catch { schedule(); return }
 
+      wsRef.current = ws
+
       ws.onopen = () => {
         setWsState('connected')
         ws?.send(JSON.stringify({ kind: 'hello', from: 'live2d-client' }))
       }
 
       ws.onmessage = (ev) => {
-        console.log(ev.data)
         try {
           const msg = JSON.parse(String(ev.data))
           if (msg?.kind === 'action' && isQueueAction(msg.payload)) {
+            if (awaitingRef.current) {
+              setAwaiting(false)
+              awaitingRef.current = false
+            }
             const a = msg.payload as QueueAction
             if (a.type === 'clearQueue') return queueRef.current?.clear()
-            if (a.type === 'stopAll') {
-              try { modelRef.current?.stopMotions() } catch {}
-              try { modelRef.current?.stopSpeaking() } catch {}
-              return
-            }
             queueRef.current?.enqueue(a.type === 'sequence' ? a.items : a)
           }
         } catch {}
       }
 
-      const onCloseErr = () => { setWsState('disconnected'); schedule() }
+      const onCloseErr = () => {
+        setWsState('disconnected')
+        if (wsRef.current === ws) wsRef.current = null
+        schedule()
+      }
       ws.onclose = onCloseErr
       ws.onerror = onCloseErr
     }
@@ -183,7 +203,43 @@ export default function Live2DCanvas() {
     const schedule = () => { if (disposed || t) return; t = setTimeout(() => { t = null; connect() }, 1000) }
 
     connect()
-    return () => { disposed = true; try { ws?.close() } catch {}; if (t) clearTimeout(t) }
+    return () => {
+      disposed = true
+      try { ws?.close() } catch {}
+      if (wsRef.current === ws) wsRef.current = null
+      if (t) clearTimeout(t)
+    }
+  }, [])
+
+  useEffect(() => {
+    const isEditable = (el: Element | null) => {
+      if (!el) return false
+      const tag = (el as HTMLElement).tagName
+      const ce  = (el as HTMLElement).getAttribute?.('contenteditable')
+      return tag === 'INPUT' || tag === 'TEXTAREA' || ce === '' || ce === 'true'
+    }
+
+    const stopAllNow = () => {
+      queueRef.current?.clear()
+      try { modelRef.current?.stopSpeaking?.() } catch {}
+      try { modelRef.current?.stopMotions?.() } catch {}
+    }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.code === 'Space' || e.key === ' ') && !e.repeat && !isEditable(e.target as Element)) {
+        e.preventDefault()
+        const ws = wsRef.current
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send('flag')
+          stopAllNow()
+          setAwaiting(true)
+          setListening(v => !v)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
   // --- Handlers UI locales
@@ -198,77 +254,125 @@ export default function Live2DCanvas() {
     queueRef.current?.enqueue({ type: 'motion', group, index, priority })
   }
 
+  // ⭐ Layout: contenedor 100% viewport, panel flotante, botón toggle
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', height: '100vh' }}>
-      <aside style={{ padding: 12, borderRight: '1px solid #333', color: '#ddd', overflow: 'auto' }}>
-        <h3 style={{ marginTop: 0 }}>Live2D WS</h3>
-        {loading && <p>Cargando modelo…</p>}
-        {error && <p style={{ color: 'tomato' }}>Error: {error}</p>}
-        <p>WS: <b style={{ color: wsState === 'connected' ? '#6f6' : '#fc6' }}>{wsState}</b></p>
+    <div
+      ref={containerRef}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: listening ? '#0b5cff' : '#111',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Botón para mostrar/ocultar panel */}
+      <button
+        onClick={() => setPanelOpen(v => !v)}
+        style={{
+          position: 'absolute',
+          top: 12,
+          left: 12,
+          zIndex: 20,
+          background: '#1e1e1e',
+          color: '#eee',
+          border: '1px solid #444',
+          borderRadius: 8,
+          padding: '8px 10px',
+          cursor: 'pointer',
+          opacity: 0.95
+        }}
+        title={panelOpen ? 'Ocultar panel' : 'Mostrar panel'}
+      >
+        {panelOpen ? '☰ Panel' : '☰ Panel'}
+      </button>
 
-        {/* Expresiones */}
-        <section style={{ marginTop: 12 }}>
-          <h4 style={{ margin: '8px 0' }}>Expresiones</h4>
-          {expressions.length === 0 ? (
-            <div style={{ fontSize: 12, color: '#aaa' }}>
-              No se detectaron expresiones. Verifica que existan *.exp3.json* y que estén referenciadas en el <code>.model3.json</code>.
-            </div>
-          ) : (
-            <>
-              <select
-                style={{ width: '100%' }}
-                value={currentExprIndex}
-                onChange={(e) => setCurrentExprIndex(parseInt(e.target.value))}
-              >
-                {expressions.map((ex) => (
-                  <option key={`expr-${ex.index}`} value={ex.index}>
-                    {ex.label}
-                  </option>
-                ))}
-              </select>
-              <button style={{ marginTop: 6 }} onClick={applyExpression}>Aplicar</button>
-            </>
-          )}
-        </section>
+      {/* Panel flotante */}
+      {panelOpen && (
+        <aside
+          style={{
+            position: 'absolute',
+            top: 56,
+            left: 12,
+            width: 320,
+            maxHeight: 'calc(100vh - 68px)',
+            padding: 12,
+            border: '1px solid #333',
+            borderRadius: 12,
+            background: 'rgba(20,20,20,0.95)',
+            color: '#ddd',
+            overflow: 'auto',
+            zIndex: 15,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(3px)'
+          }}
+        >
+          <h3 style={{ marginTop: 0 }}>Live2D WS</h3>
+          {loading && <p>Cargando modelo…</p>}
+          {error && <p style={{ color: 'tomato' }}>Error: {error}</p>}
+          <p>WS: <b style={{ color: wsState === 'connected' ? '#6f6' : '#fc6' }}>{wsState}</b></p>
 
-        {/* Motions */}
-        <section style={{ marginTop: 16 }}>
-          <h4 style={{ margin: '8px 0' }}>Motions</h4>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <label>Prioridad: {priority}</label>
-            <input
-              type="range"
-              min={0}
-              max={3}
-              step={1}
-              value={priority}
-              onChange={(e) => setPriority(parseInt(e.target.value))}
-            />
-          </div>
-
-          <div style={{ maxHeight: 320, overflow: 'auto', border: '1px solid #444', padding: 8, marginTop: 8 }}>
-            {Object.keys(motions).length === 0 && <p style={{ color: '#aaa' }}>Sin motions detectados.</p>}
-            {Object.entries(motions).map(([group, list]) => (
-              <div key={`group-${group}`} style={{ marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, marginBottom: 6 }}>{group}</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {list.map((m, i) => (
-                    <button key={`btn-${group}-${i}`} onClick={() => playMotion(group, i)}>
-                      {basename(m?.File || '') || i}
-                    </button>
-                  ))}
-                </div>
+          {/* Expresiones */}
+          <section style={{ marginTop: 12 }}>
+            <h4 style={{ margin: '8px 0' }}>Expresiones</h4>
+            {expressions.length === 0 ? (
+              <div style={{ fontSize: 12, color: '#aaa' }}>
+                No se detectaron expresiones. Verifica que existan *.exp3.json* y que estén referenciadas en el <code>.model3.json</code>.
               </div>
-            ))}
-          </div>
-        </section>
+            ) : (
+              <>
+                <select
+                  style={{ width: '100%' }}
+                  value={currentExprIndex}
+                  onChange={(e) => setCurrentExprIndex(parseInt(e.target.value))}
+                >
+                  {expressions.map((ex) => (
+                    <option key={`expr-${ex.index}`} value={ex.index}>
+                      {ex.label}
+                    </option>
+                  ))}
+                </select>
+                <button style={{ marginTop: 6 }} onClick={applyExpression}>Aplicar</button>
+              </>
+            )}
+          </section>
 
-        <small style={{ color: '#aaa', display: 'block', marginTop: 12 }}>
-          También puedes disparar acciones por WebSocket (expresión, motion, audio y vista).
-        </small>
-      </aside>
+          {/* Motions */}
+          <section style={{ marginTop: 16 }}>
+            <h4 style={{ margin: '8px 0' }}>Motions</h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label>Prioridad: {priority}</label>
+              <input
+                type="range"
+                min={0}
+                max={3}
+                step={1}
+                value={priority}
+                onChange={(e) => setPriority(parseInt(e.target.value))}
+              />
+            </div>
 
-      <main ref={containerRef} style={{ position: 'relative', background: '#111' }} />
+            <div style={{ maxHeight: 320, overflow: 'auto', border: '1px solid #444', padding: 8, marginTop: 8 }}>
+              {Object.keys(motions).length === 0 && <p style={{ color: '#aaa' }}>Sin motions detectados.</p>}
+              {Object.entries(motions).map(([group, list]) => (
+                <div key={`group-${group}`} style={{ marginBottom: 12 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>{group}</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {list.map((m, i) => (
+                      <button key={`btn-${group}-${i}`} onClick={() => playMotion(group, i)}>
+                        {basename(m?.File || '') || i}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <small style={{ color: '#aaa', display: 'block', marginTop: 12 }}>
+            También puedes disparar acciones por WebSocket (expresión, motion, audio y vista).
+          </small>
+        </aside>
+      )}
     </div>
   )
 }
@@ -282,28 +386,17 @@ async function doExpression(
   if (!model) return
   try {
     let i = -1
-
     if (name != null) {
-      // Busca por el label exactamente como aparece en el <select>
-      i = exprList.findIndex(
-        (e) => e.label.toLowerCase() === String(name).toLowerCase()
-      )
+      i = exprList.findIndex((e) => e.label.toLowerCase() === String(name).toLowerCase())
     } else if (typeof index === 'number') {
-      // Resuelve el índice “visual” del select al índice real
-      // (en tu mapeo, index ya es el índice real de model.expression)
       i = index
-      // Si en algún momento cambias el mapeo, puedes hacer:
-      // const found = exprList.find(e => e.index === index)
-      // i = found ? found.index : -1
     }
-
     if (i >= 0) model.expression(i)
   } catch (e) {
     console.warn('expression', e)
   }
   await sleep(120)
 }
-
 
 async function doMotion(model: any, { group, index = 0, priority = 3 }: { group: string; index?: number; priority?: number }) {
   if (!model) return
@@ -337,10 +430,9 @@ async function doAudio(model: any, {
       opts.onError  = () => res()
     })
   }
-  model.speak(src, opts) // 👈 STRING, no HTMLAudioElement
+  model.speak(src, opts)
   if (done) await done
 }
-
 
 // —— Control de vista ——
 async function doViewSet(model: any, app: PIXI.Application | null, a: { x?: number; y?: number; scale?: number; rotation?: number; anchorX?: number; anchorY?: number }) {
@@ -367,6 +459,7 @@ async function doViewZoomBy(model: any, app: PIXI.Application | null, { factor }
 
 async function doViewCenter(model: any, app: PIXI.Application | null) {
   if (!model || !app) return
+  // ⭐ Centrado exacto
   model.anchor?.set?.(0.5, 0.5)
   model.position?.set?.(app.renderer.width * 0.5, app.renderer.height * 0.5)
   await sleep(10)
@@ -375,21 +468,26 @@ async function doViewCenter(model: any, app: PIXI.Application | null) {
 async function doViewFit(model: any, app: PIXI.Application | null, { mode }: { mode: 'contain' | 'cover' | 'width' | 'height' }) {
   if (!model || !app) return
   const W = app.renderer.width, H = app.renderer.height
-  const base = Math.min(W / 1000, H / 1000)
-  let s = base * 0.15
-  if (mode === 'width') s = (W / 1000) * 0.15
-  if (mode === 'height') s = (H / 1000) * 0.15
-  if (mode === 'cover') s = Math.max(W / 1000, H / 1000) * 0.15
+  // ⭐ Ajuste simple pero responsivo, prioriza contener
+  const k = 0.35 // “tamaño” relativo del personaje; súbelo/bájalo a gusto
+  let s = (mode === 'cover' ? Math.max(W, H) : Math.min(W, H)) / 1000 * k
+  if (mode === 'width')  s = (W / 1000) * k
+  if (mode === 'height') s = (H / 1000) * k
   model.anchor?.set?.(0.5, 0.5)
-  model.position?.set?.(W * 0.5, H * 0.8)
+  model.position?.set?.(W * 0.5, H * 0.5)
   model.scale?.set?.(s)
   await sleep(10)
 }
 
 // —— Posición/escala inicial ——
 function centerAndScale(app: PIXI.Application, model: any) {
+  // ⭐ Siempre centrado
   model.anchor?.set?.(0.5, 0.5)
-  model.position?.set?.(app.renderer.width * 0.5, app.renderer.height * 0.8)
-  const base = Math.min(app.renderer.width / 1000, app.renderer.height / 1000)
-  model.scale?.set?.(base * 0.15)
+  model.position?.set?.(app.renderer.width * 0.5, app.renderer.height * 0.5)
+
+  // ⭐ Escala responsiva basada en el lado menor (estilo "contain")
+  // Ajusta k si quieres el modelo más grande/pequeño por defecto.
+  const k = 0.1
+  const base = Math.min(app.renderer.width, app.renderer.height) / 1000
+  model.scale?.set?.(base * k)
 }
